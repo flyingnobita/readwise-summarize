@@ -15,6 +15,16 @@ interface Config {
   output: {
     default_fields: string[];
   };
+  openrouter: {
+    api_url: string;
+    min_param_b: number;
+    max_age_days: number;
+    concurrency: number;
+    timeout_ms: number;
+    max_candidates: number;
+    smart_picks: number;
+    extra_runs: number;
+  };
 }
 
 const raw = readFileSync(configPath, "utf-8");

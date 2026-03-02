@@ -15,3 +15,13 @@ default_fields = [
   "published_date",
   "category",
 ]
+
+[openrouter]
+api_url = "https://openrouter.ai/api/v1"
+min_param_b = 27
+max_age_days = 180
+concurrency = 4
+timeout_ms = 10000
+max_candidates = 10
+smart_picks = 3
+extra_runs = 2
