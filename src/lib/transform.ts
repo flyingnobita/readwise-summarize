@@ -1,5 +1,17 @@
 import type { OutputDocument, ReaderDocument } from "./types.js";
 
+/**
+ * Build the output field list from the configured default fields,
+ * automatically appending "html_content" when withContent is true.
+ */
+export function buildFields(defaultFields: string[], withContent: boolean): string[] {
+  const fields = [...defaultFields];
+  if (withContent && !fields.includes("html_content")) {
+    fields.push("html_content");
+  }
+  return fields;
+}
+
 export function transformDocument(
   doc: ReaderDocument,
   fields: string[]

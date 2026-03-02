@@ -7,6 +7,7 @@ import {
   transformDocument,
   filterByPublishedSince,
   filterByAuthor,
+  buildFields,
 } from "./lib/transform.js";
 
 dotenv.config({ quiet: true });
@@ -78,7 +79,10 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const fields = opts.fields.split(",").map((f) => f.trim()).filter(Boolean);
+  const fields = buildFields(
+    opts.fields.split(",").map((f) => f.trim()).filter(Boolean),
+    opts.withContent ?? false
+  );
 
   const publishedSinceMs = opts.publishedSince
     ? parseDateOpt("--published-since", opts.publishedSince).getTime()

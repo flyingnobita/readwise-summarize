@@ -3,6 +3,7 @@ import {
   transformDocument,
   filterByPublishedSince,
   filterByAuthor,
+  buildFields,
 } from "./transform.js";
 import type { ReaderDocument } from "./types.js";
 
@@ -73,6 +74,34 @@ describe("transformDocument", () => {
     const doc = makeDoc({ published_date: 0 });
     const result = transformDocument(doc, ["published_date"]);
     expect(result.published_date).toBe("1970-01-01T00:00:00.000Z");
+  });
+});
+
+// --- buildFields ---
+
+describe("buildFields", () => {
+  const defaults = ["id", "title", "author", "url", "summary"];
+
+  it("returns default fields unchanged when withContent is false", () => {
+    expect(buildFields(defaults, false)).toEqual(defaults);
+  });
+
+  it("appends html_content when withContent is true", () => {
+    const result = buildFields(defaults, true);
+    expect(result).toContain("html_content");
+    expect(result[result.length - 1]).toBe("html_content");
+  });
+
+  it("does not duplicate html_content if already in defaults", () => {
+    const withHtml = [...defaults, "html_content"];
+    const result = buildFields(withHtml, true);
+    expect(result.filter((f) => f === "html_content")).toHaveLength(1);
+  });
+
+  it("does not mutate the input array", () => {
+    const copy = [...defaults];
+    buildFields(defaults, true);
+    expect(defaults).toEqual(copy);
   });
 });
 
