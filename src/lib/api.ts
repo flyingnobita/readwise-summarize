@@ -40,8 +40,6 @@ export async function fetchAllDocuments(
   do {
     if (cursor) {
       pageParams["pageCursor"] = cursor;
-    } else {
-      delete pageParams["pageCursor"];
     }
 
     const page = await fetchPage(token, pageParams);
