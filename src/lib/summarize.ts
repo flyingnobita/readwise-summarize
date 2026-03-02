@@ -1,6 +1,21 @@
 import { mapWithConcurrency } from "./openrouter.js";
 import type { OutputDocument } from "./types.js";
 
+/**
+ * Compact markdown/text to reduce token count without changing meaning.
+ * - Strips trailing whitespace from each line
+ * - Collapses runs of blank lines to a single blank line
+ * - Trims leading/trailing whitespace from the whole string
+ */
+export function compactMarkdown(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export interface SummarizeOptions {
   apiUrl: string;
   apiKey: string;
@@ -13,6 +28,7 @@ export interface SummarizeOptions {
   concurrency: number;
   withOriginal: boolean;
   fetchImpl?: typeof fetch;
+  onDebug?: (msg: string) => void;
 }
 
 export interface SummarizedDocument {
@@ -74,7 +90,7 @@ export async function summarizeDocument(
             content: opts.userPromptTemplate
               .replace("{title}", doc.title ?? "")
               .replace("{author}", doc.author ?? "")
-              .replace("{html_content}", doc.html_content ?? ""),
+              .replace("{html_content}", compactMarkdown(doc.html_content ?? "")),
           },
         ],
       }),
@@ -92,7 +108,13 @@ export async function summarizeDocument(
     const data = (await response.json()) as {
       choices: { message: { content: string } }[];
     };
-    base.ai_summary = data.choices[0].message.content;
+    opts.onDebug?.(JSON.stringify(data));
+    const content = data.choices?.[0]?.message?.content ?? "";
+    if (!content) {
+      base.ai_summary = "[summarization failed: model returned empty content]";
+      return base;
+    }
+    base.ai_summary = content;
     return base;
   } catch (err: unknown) {
     clearTimeout(timer);

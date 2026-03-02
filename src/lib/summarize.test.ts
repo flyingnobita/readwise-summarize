@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { summarizeDocument, summarizeDocuments } from "./summarize.js";
+import { summarizeDocument, summarizeDocuments, compactMarkdown } from "./summarize.js";
 import type { SummarizeOptions } from "./summarize.js";
 import type { OutputDocument } from "./types.js";
 
@@ -58,6 +58,32 @@ function makeErrorResponse(status: number, body: string): Response {
     text: async () => body,
   } as unknown as Response;
 }
+
+// ---------------------------------------------------------------------------
+// compactMarkdown
+// ---------------------------------------------------------------------------
+
+describe("compactMarkdown", () => {
+  it("strips trailing whitespace from each line", () => {
+    expect(compactMarkdown("hello   \nworld  ")).toBe("hello\nworld");
+  });
+
+  it("collapses multiple blank lines into one", () => {
+    expect(compactMarkdown("a\n\n\n\nb")).toBe("a\n\nb");
+  });
+
+  it("trims leading and trailing whitespace from the whole string", () => {
+    expect(compactMarkdown("\n\nhello\n\n")).toBe("hello");
+  });
+
+  it("returns empty string unchanged", () => {
+    expect(compactMarkdown("")).toBe("");
+  });
+
+  it("preserves single blank lines (paragraph separation)", () => {
+    expect(compactMarkdown("para one\n\npara two")).toBe("para one\n\npara two");
+  });
+});
 
 // ---------------------------------------------------------------------------
 // summarizeDocument — success path
