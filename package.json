@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "reader-fetch": "tsx src/reader-fetch.ts",
+    "openrouter-rank-free": "tsx src/openrouter-rank-free.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
