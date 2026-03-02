@@ -14,6 +14,8 @@ export async function fetchPage(
   const timer = setTimeout(() => controller.abort(), config.api.timeout_ms);
 
   try {
+    // Authorization header contains a sensitive credential; do not enable
+    // HTTP-level debug logging (e.g. NODE_DEBUG=http) in production.
     const response = await fetch(url.toString(), {
       headers: {
         Authorization: `Token ${token}`,

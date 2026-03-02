@@ -143,7 +143,9 @@ function median(values: number[]): number {
  * Test a single model by sending a probe prompt. Returns latency and success status.
  * Handles HTTP 429 with a 60s global cooldown and one retry.
  */
-// Global rate-limit cooldown state
+// Global rate-limit cooldown state shared across all testModel calls within a
+// process. This is intentional: a 429 from any model backs off all subsequent
+// probes. Not safe for concurrent independent callers in the same process.
 let rateLimitCooldownUntil = 0;
 
 export async function testModel(
