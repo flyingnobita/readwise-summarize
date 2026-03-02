@@ -1,0 +1,60 @@
+import type { ListResponse, ReaderDocument } from "./types.js";
+import { BASE_URL } from "./types.js";
+
+export async function fetchPage(
+  token: string,
+  params: Record<string, string>
+): Promise<ListResponse> {
+  const url = new URL(BASE_URL);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Token ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`API error ${response.status}: ${body}`);
+  }
+
+  return (await response.json()) as ListResponse;
+}
+
+export async function fetchAllDocuments(
+  token: string,
+  params: Record<string, string>,
+  options: {
+    paginate: boolean;
+    onPage?: (pageNum: number, count: number) => void;
+  }
+): Promise<ReaderDocument[]> {
+  const results: ReaderDocument[] = [];
+  let pageNum = 0;
+  let cursor: string | null = null;
+  const pageParams = { ...params };
+
+  do {
+    if (cursor) {
+      pageParams["pageCursor"] = cursor;
+    } else {
+      delete pageParams["pageCursor"];
+    }
+
+    const page = await fetchPage(token, pageParams);
+    pageNum++;
+    options.onPage?.(pageNum, page.results.length);
+    results.push(...page.results);
+
+    cursor = page.nextPageCursor;
+
+    if (cursor && options.paginate) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+  } while (cursor && options.paginate);
+
+  return results;
+}
