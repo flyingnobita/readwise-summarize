@@ -13,11 +13,17 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import dotenv from "dotenv";
+import { readFileSync } from "fs";
 import { fetchPage, fetchAllDocuments } from "./lib/api.js";
 import { fetchFreeModels, testModel } from "./lib/openrouter.js";
 import type { OpenRouterModel } from "./lib/openrouter.js";
 import { summarizeDocument } from "./lib/summarize.js";
 import { config } from "./lib/config.js";
+
+const systemPrompt = readFileSync(
+  new URL("../config_prompt.md", import.meta.url),
+  "utf-8"
+).trim();
 
 dotenv.config();
 
@@ -132,7 +138,7 @@ describe("summarizeDocument", () => {
         modelId: verifiedModelId,
         maxTokens: config.summarize.max_tokens,
         temperature: config.summarize.temperature,
-        systemPrompt: config.summarize.system_prompt,
+        systemPrompt,
         userPromptTemplate: config.summarize.user_prompt_template,
         timeoutMs: config.summarize.timeout_ms,
         concurrency: 1,

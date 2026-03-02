@@ -32,7 +32,6 @@ interface Config {
     timeout_ms: number;
     concurrency: number;
     temperature: number;
-    system_prompt: string;
     user_prompt_template: string;
   };
 }
@@ -52,9 +51,6 @@ export function validateConfig(raw: unknown): asserts raw is Config {
     throw new Error("config.toml: api.timeout_ms must be a number");
   }
   const summarize = r["summarize"] as Record<string, unknown>;
-  if (typeof summarize["system_prompt"] !== "string") {
-    throw new Error("config.toml: summarize.system_prompt must be a string");
-  }
   if (typeof summarize["user_prompt_template"] !== "string") {
     throw new Error("config.toml: summarize.user_prompt_template must be a string");
   }

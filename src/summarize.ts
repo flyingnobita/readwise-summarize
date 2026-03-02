@@ -13,6 +13,7 @@ dotenv.config({ quiet: true });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const configPath = join(__dirname, "../config.toml");
+const systemPrompt = readFileSync(join(__dirname, "../config_prompt.md"), "utf-8").trim();
 
 function parsePositiveInt(value: string, flag: string): number {
   const n = parseInt(value, 10);
@@ -162,11 +163,12 @@ async function main(): Promise<void> {
       modelId,
       maxTokens: parsePositiveInt(opts.maxTokens, "--max-tokens"),
       temperature: config.summarize.temperature,
-      systemPrompt: config.summarize.system_prompt,
+      systemPrompt,
       userPromptTemplate: config.summarize.user_prompt_template,
       timeoutMs: parsePositiveInt(opts.timeout, "--timeout"),
       concurrency: parsePositiveInt(opts.concurrency, "--concurrency"),
       withOriginal: opts.withOriginal ?? false,
+      onDebug: verbose ? (msg) => process.stderr.write(`[debug] ${msg}\n`) : undefined,
     },
     verbose ? (msg) => process.stderr.write(msg + "\n") : undefined
   );
