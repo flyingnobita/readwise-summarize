@@ -1,0 +1,17 @@
+[api]
+base_url = "https://readwise.io/api/v3/list/"
+# Delay in milliseconds between paginated requests to avoid rate limiting
+pagination_delay_ms = 3000
+default_limit = 100
+
+[output]
+default_fields = [
+  "id",
+  "title",
+  "author",
+  "url",
+  "summary",
+  "tags",
+  "published_date",
+  "category",
+]
