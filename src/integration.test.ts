@@ -2,13 +2,15 @@
  * Integration tests — require live credentials.
  * Run with: pnpm test:integration
  *
- * API call budget per run: ~6 calls
+ * API call budget per run: ~8 calls
  *   1 × Readwise (basic fetch)
  *   1 × Readwise (category=rss + withHtmlContent)
  *   1 × OpenRouter (fetchFreeModels)
  *   1 × OpenRouter (testModel)
- *   1 × Readwise (fetch doc for summarize)
- *   1 × OpenRouter (summarize LLM call)
+ *   1 × Readwise (fetch doc for verified-model summarize)
+ *   1 × OpenRouter (verified-model summarize LLM call)
+ *   1 × Readwise (fetch doc for config-model summarize)
+ *   1 × OpenRouter (config-model summarize LLM call)
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
@@ -20,7 +22,7 @@ import type { OpenRouterModel } from "./lib/openrouter.js";
 import { summarizeDocument } from "./lib/summarize.js";
 import { config } from "./lib/config.js";
 
-const systemPrompt = readFileSync(
+const instructions = readFileSync(
   new URL("../config_prompt.md", import.meta.url),
   "utf-8"
 ).trim();
@@ -137,9 +139,11 @@ describe("summarizeDocument", () => {
         apiKey: OPENROUTER_API_KEY,
         modelId: verifiedModelId,
         maxTokens: config.summarize.max_tokens,
+        lengthInstruction: config.summarize.length_instruction,
         temperature: config.summarize.temperature,
-        systemPrompt,
+        systemPrompt: config.summarize.system_prompt,
         userPromptTemplate: config.summarize.user_prompt_template,
+        instructions,
         timeoutMs: config.summarize.timeout_ms,
         concurrency: 1,
         withOriginal: true,
@@ -152,4 +156,58 @@ describe("summarizeDocument", () => {
     expect(result.link).toBeTruthy();
     expect(result.original_summary).toBe(doc.summary);
   }, 60_000);
+});
+
+// ---------------------------------------------------------------------------
+// Summarize — config model: exercises the exact model, token settings, and
+// length_instruction from config.toml + config_prompt.md.
+// Catches regressions like "model returned empty content" or "hit token limit"
+// that only appear with the specific configured model and its token behavior.
+// ---------------------------------------------------------------------------
+
+describe("summarizeDocument with config.summarize.model", () => {
+  it("produces a non-empty summary using the configured model and all config settings", async () => {
+    const docs = await fetchAllDocuments(
+      READWISE_TOKEN,
+      { limit: "3", category: "rss", withHtmlContent: "true" },
+      { paginate: false }
+    );
+
+    const doc = docs.find((d) => d.html_content);
+    if (!doc) {
+      process.stderr.write("⚠  No RSS doc with html_content found; config model summary test skipped\n");
+      return;
+    }
+
+    const result = await summarizeDocument(
+      {
+        id: doc.id,
+        title: doc.title,
+        author: doc.author,
+        url: doc.url,
+        source_url: doc.source_url,
+        html_content: doc.html_content,
+        summary: doc.summary,
+      },
+      {
+        apiUrl: config.openrouter.api_url,
+        apiKey: OPENROUTER_API_KEY,
+        modelId: config.summarize.model,
+        maxTokens: config.summarize.max_tokens,
+        lengthInstruction: config.summarize.length_instruction,
+        temperature: config.summarize.temperature,
+        systemPrompt: config.summarize.system_prompt,
+        userPromptTemplate: config.summarize.user_prompt_template,
+        instructions,
+        timeoutMs: config.summarize.timeout_ms,
+        concurrency: 1,
+        withOriginal: false,
+      }
+    );
+
+    expect(result.ai_summary).not.toBe("[no content available]");
+    expect(result.ai_summary).not.toMatch(/^\[summarization failed/);
+    expect(result.ai_summary.length).toBeGreaterThan(50);
+    expect(result.link).toBeTruthy();
+  }, 90_000);
 });
