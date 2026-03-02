@@ -33,23 +33,23 @@ pnpm reader-fetch [options]
 
 **API-side** (sent to Readwise Reader):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--location <loc>` | `feed` \| `new` \| `later` \| `shortlist` \| `archive` | `feed` |
-| `--category <cat>` | `rss` \| `article` \| `email` \| `pdf` \| `epub` \| `tweet` \| `video` | |
-| `--tag <tag>` | Filter by tag name; pass empty string for untagged docs | |
-| `--since <date>` | Only docs updated after this date (ISO 8601) | |
-| `--limit <n>` | Results per API request, 1-100 | `100` |
-| `--all` | Paginate through all pages (3s delay between requests to respect rate limits) | |
-| `--with-content` | Include full HTML article content (`html_content` field) | |
+| Flag                                                                                        | If omitted                  |
+| ------------------------------------------------------------------------------------------- | --------------------------- |
+| `--location <loc>` — `feed` \| `new` \| `later` \| `shortlist` \| `archive`                 | All locations returned      |
+| `--category <cat>` — `rss` \| `article` \| `email` \| `pdf` \| `epub` \| `tweet` \| `video` | All categories returned     |
+| `--tag <tag>` — tag name; empty string for untagged                                         | All tags returned           |
+| `--updated-after <date>` — ISO 8601 or natural language (e.g. `yesterday`, `1 week ago`)    | No date filter applied      |
+| `--limit <n>` — results per API request, 1-100                                              | API default (100 per page)  |
+| `--all` — paginate through all pages (3s delay between requests)                            | First page only             |
+| `--with-content` — include full HTML content (`html_content` field)                         | `html_content` not included |
 
 **Client-side** (applied after fetch):
 
-| Flag | Description |
-|------|-------------|
-| `--published-since <date>` | Only docs published on or after this date (ISO 8601) |
-| `--author <name>` | Case-insensitive substring match on author name |
-| `--fields <fields>` | Comma-separated list of fields to include in output (default: see below) |
+| Flag                                                            | If omitted                 |
+| --------------------------------------------------------------- | -------------------------- |
+| `--published-since <date>` — ISO 8601 or natural language       | No date filter applied     |
+| `--author <name>` — case-insensitive substring match            | All authors returned       |
+| `--fields <fields>` — comma-separated list of fields to include | Default fields (see below) |
 
 **Default output fields:** `id`, `title`, `author`, `url`, `summary`, `tags`, `published_date`, `category`
 
@@ -59,14 +59,15 @@ pnpm reader-fetch [options]
 # First 5 articles from your feed
 pnpm reader-fetch --limit 5
 
-# All email newsletters updated after March 1
-pnpm reader-fetch --category email --since 2026-03-01 --all
+# All email newsletters updated in the last week
+pnpm reader-fetch --category email --updated-after "1 week ago" --all
 
-# Articles by a specific author
-pnpm reader-fetch --author "Lenny" --category email
+# Articles by a specific author updated yesterday
+pnpm reader-fetch --author "Lenny" --category email --updated-after yesterday
 
-# All RSS articles published since Feb 1
+# All RSS articles published since Feb 1 (ISO or natural language both work)
 pnpm reader-fetch --category rss --published-since 2026-02-01 --all
+pnpm reader-fetch --category rss --published-since "1 month ago" --all
 
 # Fetch full article HTML content
 pnpm reader-fetch --limit 5 --with-content --fields title,html_content
@@ -95,6 +96,7 @@ JSON array written to stdout; progress and errors go to stderr.
 ```
 
 **Field notes:**
+
 - `tags` - flattened to an array of strings
 - `published_date` - ISO 8601 string, or `null` if not set
 - `html_content` - only present when `--with-content` is passed; may be `null` for some document types
