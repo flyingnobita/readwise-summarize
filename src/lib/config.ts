@@ -25,6 +25,15 @@ interface Config {
     smart_picks: number;
     extra_runs: number;
   };
+  summarize: {
+    model: string;
+    max_tokens: number;
+    timeout_ms: number;
+    concurrency: number;
+    temperature: number;
+    system_prompt: string;
+    user_prompt_template: string;
+  };
 }
 
 const raw = readFileSync(configPath, "utf-8");

@@ -1,0 +1,115 @@
+import { mapWithConcurrency } from "./openrouter.js";
+import type { OutputDocument } from "./types.js";
+
+export interface SummarizeOptions {
+  apiUrl: string;
+  apiKey: string;
+  modelId: string;
+  maxTokens: number;
+  temperature: number;
+  systemPrompt: string;
+  userPromptTemplate: string;
+  timeoutMs: number;
+  concurrency: number;
+  withOriginal: boolean;
+  fetchImpl?: typeof fetch;
+}
+
+export interface SummarizedDocument {
+  id?: string;
+  title?: string;
+  author?: string;
+  link: string;
+  ai_summary: string;
+  original_summary?: string;
+}
+
+export async function summarizeDocument(
+  doc: OutputDocument,
+  opts: SummarizeOptions
+): Promise<SummarizedDocument> {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const link = (doc.source_url as string | undefined) ?? (doc.url as string) ?? "";
+
+  const base: SummarizedDocument = {
+    id: doc.id as string | undefined,
+    title: doc.title as string | undefined,
+    author: doc.author as string | undefined,
+    link,
+    ai_summary: "",
+  };
+
+  if (opts.withOriginal && doc.summary) {
+    base.original_summary = doc.summary as string;
+  }
+
+  if (!doc.html_content) {
+    base.ai_summary = "[no content available]";
+    return base;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
+
+  try {
+    const response = await fetchImpl(`${opts.apiUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${opts.apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/flyingnobita/daily-brief",
+        "X-Title": "daily-brief",
+      },
+      body: JSON.stringify({
+        model: opts.modelId,
+        max_tokens: opts.maxTokens,
+        temperature: opts.temperature,
+        messages: [
+          {
+            role: "system",
+            content: opts.systemPrompt,
+          },
+          {
+            role: "user",
+            content: opts.userPromptTemplate
+              .replace("{title}", doc.title ?? "")
+              .replace("{author}", doc.author ?? "")
+              .replace("{html_content}", doc.html_content ?? ""),
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timer);
+
+    if (!response.ok) {
+      const body = await response.text();
+      base.ai_summary = `[summarization failed: HTTP ${response.status}: ${body}]`;
+      return base;
+    }
+
+    const data = (await response.json()) as {
+      choices: { message: { content: string } }[];
+    };
+    base.ai_summary = data.choices[0].message.content;
+    return base;
+  } catch (err: unknown) {
+    clearTimeout(timer);
+    const message = err instanceof Error ? err.message : String(err);
+    base.ai_summary = `[summarization failed: ${message}]`;
+    return base;
+  }
+}
+
+export async function summarizeDocuments(
+  docs: OutputDocument[],
+  opts: SummarizeOptions,
+  onProgress?: (msg: string) => void
+): Promise<SummarizedDocument[]> {
+  return mapWithConcurrency(docs, opts.concurrency, async (doc) => {
+    const result = await summarizeDocument(doc, opts);
+    onProgress?.(`Summarized: ${doc.title ?? doc.url ?? "unknown"}`);
+    return result;
+  });
+}

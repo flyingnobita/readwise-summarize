@@ -6,8 +6,10 @@
   "scripts": {
     "reader-fetch": "tsx src/reader-fetch.ts",
     "openrouter-rank-free": "tsx src/openrouter-rank-free.ts",
+    "summarize": "tsx src/summarize.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "vitest run --reporter=verbose --config vitest.integration.config.ts"
   },
   "keywords": [],
   "author": "flyingnobita",
@@ -30,10 +32,5 @@
       "esbuild"
     ]
   },
-  "vitest": {
-    "environment": "node",
-    "include": [
-      "src/**/*.test.ts"
-    ]
-  }
+  "vitest": {}
 }
