@@ -128,3 +128,7 @@ src/
 │   └── transform.test.ts
 └── reader-fetch.ts       # CLI entry point
 ```
+
+## Roadmap
+
+- [ ] extract openrouter-rank-free as a separate library, with a CLI and library interface
