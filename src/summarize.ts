@@ -14,6 +14,15 @@ dotenv.config({ quiet: true });
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const configPath = join(__dirname, "../config.toml");
 
+function parsePositiveInt(value: string, flag: string): number {
+  const n = parseInt(value, 10);
+  if (isNaN(n) || n <= 0) {
+    process.stderr.write(`Error: ${flag} must be a positive integer, got "${value}".\n`);
+    process.exit(1);
+  }
+  return n;
+}
+
 async function main(): Promise<void> {
   const program = new Command();
 
@@ -132,8 +141,9 @@ async function main(): Promise<void> {
   let docs: OutputDocument[];
   try {
     docs = JSON.parse(input) as OutputDocument[];
-  } catch {
-    process.stderr.write("Error: Failed to parse stdin as JSON array.\n");
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Error: Failed to parse stdin as JSON: ${msg}\n`);
     process.exit(1);
   }
 
@@ -150,12 +160,12 @@ async function main(): Promise<void> {
       apiUrl: config.openrouter.api_url,
       apiKey,
       modelId,
-      maxTokens: parseInt(opts.maxTokens, 10),
+      maxTokens: parsePositiveInt(opts.maxTokens, "--max-tokens"),
       temperature: config.summarize.temperature,
       systemPrompt: config.summarize.system_prompt,
       userPromptTemplate: config.summarize.user_prompt_template,
-      timeoutMs: parseInt(opts.timeout, 10),
-      concurrency: parseInt(opts.concurrency, 10),
+      timeoutMs: parsePositiveInt(opts.timeout, "--timeout"),
+      concurrency: parsePositiveInt(opts.concurrency, "--concurrency"),
       withOriginal: opts.withOriginal ?? false,
     },
     verbose ? (msg) => process.stderr.write(msg + "\n") : undefined

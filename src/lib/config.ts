@@ -11,6 +11,7 @@ interface Config {
     base_url: string;
     pagination_delay_ms: number;
     default_limit: number;
+    timeout_ms: number;
   };
   output: {
     default_fields: string[];

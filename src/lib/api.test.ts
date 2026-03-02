@@ -53,6 +53,17 @@ describe("fetchPage", () => {
     ).rejects.toThrow("API error 429:");
   });
 
+  it("passes an AbortController signal to the fetch call", async () => {
+    const payload = { count: 0, nextPageCursor: null, results: [] };
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => payload });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchPage("test-token", {});
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.signal).toBeDefined();
+  });
+
   it("builds the URL correctly from params", async () => {
     const payload = { count: 0, nextPageCursor: null, results: [] };
     const fetchMock = vi.fn().mockResolvedValue({

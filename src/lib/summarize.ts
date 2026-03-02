@@ -85,7 +85,7 @@ export async function summarizeDocument(
 
     if (!response.ok) {
       const body = await response.text();
-      base.ai_summary = `[summarization failed: HTTP ${response.status}: ${body}]`;
+      base.ai_summary = `[summarization failed: HTTP ${response.status}: ${body.slice(0, 200)}]`;
       return base;
     }
 

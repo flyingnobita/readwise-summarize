@@ -93,7 +93,7 @@ export async function fetchFreeModels(
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`OpenRouter models API error ${response.status}: ${body}`);
+    throw new Error(`OpenRouter models API error ${response.status}: ${body.slice(0, 200)}`);
   }
 
   const data = (await response.json()) as { data: OpenRouterModel[] };

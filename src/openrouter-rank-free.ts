@@ -75,11 +75,35 @@ async function main(): Promise<void> {
   }
 
   const maxAgeDays = parseInt(opts.maxAgeDays, 10);
+  if (isNaN(maxAgeDays) || maxAgeDays < 0) {
+    process.stderr.write(`Error: --max-age-days must be a non-negative integer, got "${opts.maxAgeDays}".\n`);
+    process.exit(1);
+  }
   const concurrency = parseInt(opts.concurrency, 10);
+  if (isNaN(concurrency) || concurrency <= 0) {
+    process.stderr.write(`Error: --concurrency must be a positive integer, got "${opts.concurrency}".\n`);
+    process.exit(1);
+  }
   const timeoutMs = parseInt(opts.timeout, 10);
+  if (isNaN(timeoutMs) || timeoutMs <= 0) {
+    process.stderr.write(`Error: --timeout must be a positive integer, got "${opts.timeout}".\n`);
+    process.exit(1);
+  }
   const maxCandidates = parseInt(opts.candidates, 10);
+  if (isNaN(maxCandidates) || maxCandidates <= 0) {
+    process.stderr.write(`Error: --candidates must be a positive integer, got "${opts.candidates}".\n`);
+    process.exit(1);
+  }
   const smartPicks = parseInt(opts.smart, 10);
+  if (isNaN(smartPicks) || smartPicks < 0) {
+    process.stderr.write(`Error: --smart must be a non-negative integer, got "${opts.smart}".\n`);
+    process.exit(1);
+  }
   const extraRuns = parseInt(opts.runs, 10);
+  if (isNaN(extraRuns) || extraRuns < 0) {
+    process.stderr.write(`Error: --runs must be a non-negative integer, got "${opts.runs}".\n`);
+    process.exit(1);
+  }
 
   const verbose = opts.verbose ?? false;
 

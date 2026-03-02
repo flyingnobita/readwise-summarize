@@ -10,18 +10,29 @@ export async function fetchPage(
     url.searchParams.set(key, value);
   }
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Token ${token}`,
-    },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), config.api.timeout_ms);
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`API error ${response.status}: ${body}`);
+  try {
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timer);
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`API error ${response.status}: ${body.slice(0, 200)}`);
+    }
+
+    return (await response.json()) as ListResponse;
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
   }
-
-  return (await response.json()) as ListResponse;
 }
 
 export async function fetchAllDocuments(
