@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { fetchPage } from "./api.js";
-import { BASE_URL } from "./types.js";
+import { config } from "./config.js";
+
+const BASE_URL = config.api.base_url;
 
 afterEach(() => {
   vi.unstubAllGlobals();

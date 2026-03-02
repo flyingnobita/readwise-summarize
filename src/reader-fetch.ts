@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import dotenv from "dotenv";
-import { DEFAULT_FIELDS } from "./lib/types.js";
+import { config } from "./lib/config.js";
 import { parseDate } from "./lib/parse-date.js";
 import { fetchAllDocuments } from "./lib/api.js";
 import {
@@ -11,7 +11,7 @@ import {
 
 dotenv.config({ quiet: true });
 
-const DEFAULT_FIELDS_STR = DEFAULT_FIELDS.join(",");
+const DEFAULT_FIELDS_STR = config.output.default_fields.join(",");
 
 function parseDateOpt(flag: string, value: string): Date {
   const date = parseDate(value);
@@ -50,7 +50,7 @@ async function main(): Promise<void> {
       "Client-side: case-insensitive substring match on author; omit for all authors"
     )
     .option("--with-content", "Include full HTML content (html_content field); omit to exclude")
-    .option("--limit <n>", "Max results per page, 1-100; omit for API default (100)", "100")
+    .option("--limit <n>", "Max results per page, 1-100; omit for API default (100)", String(config.api.default_limit))
     .option("--all", "Paginate through all pages; omit for first page only")
     .option(
       "--fields <fields>",

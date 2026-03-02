@@ -1,11 +1,11 @@
 import type { ListResponse, ReaderDocument } from "./types.js";
-import { BASE_URL } from "./types.js";
+import { config } from "./config.js";
 
 export async function fetchPage(
   token: string,
   params: Record<string, string>
 ): Promise<ListResponse> {
-  const url = new URL(BASE_URL);
+  const url = new URL(config.api.base_url);
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value);
   }
@@ -50,7 +50,7 @@ export async function fetchAllDocuments(
     cursor = page.nextPageCursor;
 
     if (cursor && options.paginate) {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, config.api.pagination_delay_ms));
     }
   } while (cursor && options.paginate);
 

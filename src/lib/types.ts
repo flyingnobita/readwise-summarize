@@ -45,15 +45,3 @@ export interface OutputDocument {
   [key: string]: unknown;
 }
 
-export const BASE_URL = "https://readwise.io/api/v3/list/";
-
-export const DEFAULT_FIELDS = [
-  "id",
-  "title",
-  "author",
-  "url",
-  "summary",
-  "tags",
-  "published_date",
-  "category",
-];
