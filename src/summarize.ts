@@ -13,12 +13,21 @@ dotenv.config({ quiet: true });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const configPath = join(__dirname, "../config.toml");
-const systemPrompt = readFileSync(join(__dirname, "../config_prompt.md"), "utf-8").trim();
+const instructions = readFileSync(join(__dirname, "../config_prompt.md"), "utf-8").trim();
 
 function parsePositiveInt(value: string, flag: string): number {
   const n = parseInt(value, 10);
   if (isNaN(n) || n <= 0) {
     process.stderr.write(`Error: ${flag} must be a positive integer, got "${value}".\n`);
+    process.exit(1);
+  }
+  return n;
+}
+
+function parseNonNegativeInt(value: string, flag: string): number {
+  const n = parseInt(value, 10);
+  if (isNaN(n) || n < 0) {
+    process.stderr.write(`Error: ${flag} must be a non-negative integer, got "${value}".\n`);
     process.exit(1);
   }
   return n;
@@ -161,10 +170,12 @@ async function main(): Promise<void> {
       apiUrl: config.openrouter.api_url,
       apiKey,
       modelId,
-      maxTokens: parsePositiveInt(opts.maxTokens, "--max-tokens"),
+      maxTokens: parseNonNegativeInt(opts.maxTokens, "--max-tokens"),
+      lengthInstruction: config.summarize.length_instruction,
       temperature: config.summarize.temperature,
-      systemPrompt,
+      systemPrompt: config.summarize.system_prompt,
       userPromptTemplate: config.summarize.user_prompt_template,
+      instructions,
       timeoutMs: parsePositiveInt(opts.timeout, "--timeout"),
       concurrency: parsePositiveInt(opts.concurrency, "--concurrency"),
       withOriginal: opts.withOriginal ?? false,

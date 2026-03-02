@@ -20,10 +20,14 @@ export interface SummarizeOptions {
   apiUrl: string;
   apiKey: string;
   modelId: string;
+  /** 0 = omit max_tokens from request; positive = hard cap */
   maxTokens: number;
+  /** Soft length guidance appended inside <instructions>. Mirrors steipete's lengthInstruction. */
+  lengthInstruction?: string;
   temperature: number;
   systemPrompt: string;
   userPromptTemplate: string;
+  instructions: string;
   timeoutMs: number;
   concurrency: number;
   withOriginal: boolean;
@@ -68,6 +72,10 @@ export async function summarizeDocument(
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
 
   try {
+    const instructionParts = [opts.instructions];
+    if (opts.lengthInstruction?.trim()) instructionParts.push(opts.lengthInstruction.trim());
+    const instructions = instructionParts.join("\n");
+
     const response = await fetchImpl(`${opts.apiUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -78,7 +86,7 @@ export async function summarizeDocument(
       },
       body: JSON.stringify({
         model: opts.modelId,
-        max_tokens: opts.maxTokens,
+        ...(opts.maxTokens > 0 ? { max_tokens: opts.maxTokens } : {}),
         temperature: opts.temperature,
         messages: [
           {
@@ -88,6 +96,8 @@ export async function summarizeDocument(
           {
             role: "user",
             content: opts.userPromptTemplate
+              .replace("{instructions}", instructions)
+              .replace("{url}", link)
               .replace("{title}", doc.title ?? "")
               .replace("{author}", doc.author ?? "")
               .replace("{html_content}", compactMarkdown(doc.html_content ?? "")),
@@ -106,12 +116,15 @@ export async function summarizeDocument(
     }
 
     const data = (await response.json()) as {
-      choices: { message: { content: string } }[];
+      choices: { finish_reason?: string; message: { content: string | null } }[];
     };
     opts.onDebug?.(JSON.stringify(data));
-    const content = data.choices?.[0]?.message?.content ?? "";
+    const choice = data.choices?.[0];
+    const content = choice?.message?.content ?? "";
     if (!content) {
-      base.ai_summary = "[summarization failed: model returned empty content]";
+      const reason = choice?.finish_reason;
+      const detail = reason === "length" ? "hit token limit (increase max_tokens)" : "model returned empty content";
+      base.ai_summary = `[summarization failed: ${detail}]`;
       return base;
     }
     base.ai_summary = content;

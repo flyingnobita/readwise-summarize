@@ -20,6 +20,7 @@ function makeOpts(overrides: Partial<SummarizeOptions> = {}): SummarizeOptions {
     temperature: 0.7,
     systemPrompt: "You are a summarizer.",
     userPromptTemplate: "Title: {title}\nAuthor: {author}\n\n{html_content}",
+    instructions: "Summarize concisely.",
     timeoutMs: 5000,
     concurrency: 2,
     withOriginal: false,
@@ -141,6 +142,69 @@ describe("summarizeDocument", () => {
     expect(body.messages[1].content).toContain("My Title");
     expect(body.messages[1].content).toContain("My Author");
     expect(body.messages[1].content).toContain("<p>Content</p>");
+  });
+
+  it("substitutes {url} placeholder in user prompt template", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    const opts = makeOpts({
+      fetchImpl: mockFetch,
+      userPromptTemplate:
+        "<instructions>\n{instructions}\n</instructions>\n\n<context>\nSource URL: {url}\nTitle: {title}\nAuthor: {author}\n</context>\n\n<content>\n{html_content}\n</content>",
+    });
+    const doc = makeDoc({ url: "https://example.com/article" });
+
+    await summarizeDocument(doc, opts);
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    expect(body.messages[1].content).toContain("Source URL: https://example.com/article");
+    expect(body.messages[1].content).toContain("<context>");
+    expect(body.messages[1].content).toContain("</context>");
+  });
+
+  it("omits max_tokens from request body when maxTokens is 0", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    await summarizeDocument(makeDoc(), makeOpts({ fetchImpl: mockFetch, maxTokens: 0 }));
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    expect(body.max_tokens).toBeUndefined();
+  });
+
+  it("includes max_tokens in request body when maxTokens is positive", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    await summarizeDocument(makeDoc(), makeOpts({ fetchImpl: mockFetch, maxTokens: 512 }));
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    expect(body.max_tokens).toBe(512);
+  });
+
+  it("appends lengthInstruction to instructions inside <instructions> block", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    const opts = makeOpts({
+      fetchImpl: mockFetch,
+      userPromptTemplate: "<instructions>\n{instructions}\n</instructions>",
+      instructions: "Summarize concisely.",
+      lengthInstruction: "Target length: around 500 characters.",
+    });
+
+    await summarizeDocument(makeDoc(), opts);
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    expect(body.messages[1].content).toContain("Summarize concisely.\nTarget length: around 500 characters.");
+  });
+
+  it("does not append lengthInstruction when it is empty or whitespace", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    const opts = makeOpts({
+      fetchImpl: mockFetch,
+      userPromptTemplate: "<instructions>\n{instructions}\n</instructions>",
+      instructions: "Summarize concisely.",
+      lengthInstruction: "   ",
+    });
+
+    await summarizeDocument(makeDoc(), opts);
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    expect(body.messages[1].content).toBe("<instructions>\nSummarize concisely.\n</instructions>");
   });
 
   it("uses source_url over url for link field", async () => {

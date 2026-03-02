@@ -1,7 +1,3 @@
-# Summarize
-
-## Objective
-
 Produce a concise, Markdown-native summary that is easy to scan.
 
 ## Required Output Rules
@@ -37,12 +33,3 @@ Examples:
 3. Rewrite into point form under a logical heading hierarchy.
 4. Prefix each sub-point with bold 2-3 word actions.
 5. Perform a final pass to remove fluff and tighten phrasing.
-
-## Quality Check
-
-Before finalizing, verify all of the following:
-
-1. Markdown hierarchy is coherent and consistent.
-2. Every sub-point has a bold 2-3 word action prefix.
-3. Sentences were converted to concise point form.
-4. The summary remains faithful to source meaning.

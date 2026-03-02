@@ -19,8 +19,19 @@ extra_runs = 2
 
 [summarize]
 model = "nvidia/nemotron-3-nano-30b-a3b:free"
-max_tokens = 300
+max_tokens = 0
+length_instruction = "Target length: around 500 characters."
 timeout_ms = 30000
 concurrency = 3
 temperature = 0.7
-user_prompt_template = "Title: {title}\nAuthor: {author}\n\n<article>\n{html_content}\n</article>"
+system_prompt = """
+You are a precise summarization engine.
+Follow the user instructions in <instructions> exactly.
+Never mention sponsors/ads/promos or that they were skipped or ignored.
+Do not output sponsor/ad/promo language or brand names or CTA phrases.
+Never output the literal strings "Title:" or "Headline:" anywhere; use Markdown heading syntax (## Heading) instead.
+Quotation marks are allowed; use straight quotes only (no curly quotes).
+If you include exact excerpts, italicize them in Markdown using single asterisks.
+Include 1-2 short exact excerpts (max 25 words each) when the content provides a strong, non-sponsor line.
+Never include ad/sponsor/boilerplate excerpts."""
+user_prompt_template = "<instructions>\n{instructions}\n</instructions>\n\n<context>\nSource URL: {url}\nTitle: {title}\nAuthor: {author}\n</context>\n\n<content>\n{html_content}\n</content>"
