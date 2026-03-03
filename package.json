@@ -3,7 +3,22 @@
   "version": "1.0.0",
   "description": "CLI tools for daily-brief pipeline",
   "type": "module",
+  "bin": {
+    "reader-fetch": "./dist/reader-fetch.js",
+    "summarize": "./dist/summarize.js",
+    "openrouter-rank-free": "./dist/openrouter-rank-free.js"
+  },
+  "files": [
+    "dist",
+    "config.toml",
+    "config_prompt.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "clean": "rm -rf dist",
+    "build": "pnpm clean && tsc -p tsconfig.build.json",
+    "prepack": "pnpm build",
     "reader-fetch": "tsx src/reader-fetch.ts",
     "openrouter-rank-free": "tsx src/openrouter-rank-free.ts",
     "summarize": "tsx src/summarize.ts",

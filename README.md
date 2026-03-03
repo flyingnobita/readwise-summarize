@@ -15,11 +15,32 @@ CLI tools for fetching content from Readwise Reader and generating AI-powered ar
 pnpm install
 ```
 
+## Package As CLI (Local Only)
+
+Build and expose commands locally without publishing:
+
+```bash
+pnpm build
+pnpm link --global
+```
+
+This installs these commands on your machine:
+
+- `reader-fetch`
+- `summarize`
+- `openrouter-rank-free`
+
+To create a distributable tarball (still local):
+
+```bash
+pnpm pack
+```
+
 Add credentials to `.env`:
 
 ```
 READWISE_TOKEN=your_token_here
-OPENROUTER_API_KEY=your_key_here
+OPEN_ROUTER_SUMMARIZE_API=your_key_here
 ```
 
 Get your Readwise token at [readwise.io/access_token](https://readwise.io/access_token).
@@ -46,22 +67,22 @@ pnpm reader-fetch [options]
 
 **API-side** (sent to Readwise Reader):
 
-| Flag | If omitted |
-| --- | --- |
-| `--location <loc>` — `feed` \| `new` \| `later` \| `shortlist` \| `archive` | All locations |
-| `--category <cat>` — `rss` \| `article` \| `email` \| `pdf` \| `epub` \| `tweet` \| `video` | All categories |
-| `--tag <tag>` — tag name; empty string for untagged | All tags |
-| `--updated-after <date>` — ISO 8601 or natural language (e.g. `yesterday`, `1 week ago`) | No date filter |
-| `--limit <n>` — results per API request, 1-100 | 100 per page |
-| `--all` — paginate through all pages (3s delay between requests) | First page only |
-| `--with-content` — include full HTML content (`html_content` field) | `html_content` not included |
+| Flag                                                                                        | If omitted                  |
+| ------------------------------------------------------------------------------------------- | --------------------------- |
+| `--location <loc>` — `feed` \| `new` \| `later` \| `shortlist` \| `archive`                 | All locations               |
+| `--category <cat>` — `rss` \| `article` \| `email` \| `pdf` \| `epub` \| `tweet` \| `video` | All categories              |
+| `--tag <tag>` — tag name; empty string for untagged                                         | All tags                    |
+| `--updated-after <date>` — ISO 8601 or natural language (e.g. `yesterday`, `1 week ago`)    | No date filter              |
+| `--limit <n>` — results per API request, 1-100                                              | 100 per page                |
+| `--all` — paginate through all pages (3s delay between requests)                            | First page only             |
+| `--with-content` — include full HTML content (`html_content` field)                         | `html_content` not included |
 
 **Client-side** (applied after fetch):
 
-| Flag | If omitted |
-| --- | --- |
-| `--published-since <date>` — ISO 8601 or natural language | No date filter |
-| `--author <name>` — case-insensitive substring match | All authors |
+| Flag                                                            | If omitted                 |
+| --------------------------------------------------------------- | -------------------------- |
+| `--published-since <date>` — ISO 8601 or natural language       | No date filter             |
+| `--author <name>` — case-insensitive substring match            | All authors                |
 | `--fields <fields>` — comma-separated list of fields to include | Default fields (see below) |
 
 **Default output fields:** `id`, `title`, `author`, `url`, `source_url`, `summary`, `tags`, `published_date`, `category`
@@ -124,15 +145,15 @@ pnpm --silent reader-fetch [options] | pnpm summarize [options]
 
 ### Options
 
-| Flag | Default |
-| --- | --- |
-| `--model <id>` — model ID e.g. `google/gemma-3-27b-it:free` | `config.summarize.model` |
-| `--scan-free` — scan OpenRouter for the best free model, save it to config, use it | — |
-| `--with-original` — include the original Readwise `summary` field in output | off |
-| `--concurrency <n>` — parallel workers | `config.summarize.concurrency` |
-| `--max-tokens <n>` — max tokens per summary | `config.summarize.max_tokens` |
-| `--timeout <ms>` — per-request timeout | `config.summarize.timeout_ms` |
-| `--verbose` — print progress to stderr | off |
+| Flag                                                                               | Default                        |
+| ---------------------------------------------------------------------------------- | ------------------------------ |
+| `--model <id>` — model ID e.g. `google/gemma-3-27b-it:free`                        | `config.summarize.model`       |
+| `--scan-free` — scan OpenRouter for the best free model, save it to config, use it | —                              |
+| `--with-original` — include the original Readwise `summary` field in output        | off                            |
+| `--concurrency <n>` — parallel workers                                             | `config.summarize.concurrency` |
+| `--max-tokens <n>` — max tokens per summary                                        | `config.summarize.max_tokens`  |
+| `--timeout <ms>` — per-request timeout                                             | `config.summarize.timeout_ms`  |
+| `--verbose` — print progress to stderr                                             | off                            |
 
 **Model resolution order:** `--model` → `--scan-free` result → `config.summarize.model` → error
 
@@ -158,7 +179,7 @@ The `user_prompt_template` supports `{title}`, `{author}`, and `{html_content}` 
 pnpm --silent reader-fetch --category rss --updated-after today --with-content | pnpm summarize --verbose
 
 # Auto-select the best free model, then summarize
-pnpm --silent reader-fetch --category rss --limit 5 --with-content | pnpm summarize --scan-free --verbose
+pnpm --silent reader-fetch --category rss --limit 2 --with-content | pnpm summarize --scan-free --verbose
 
 # Include the original Readwise summary alongside the AI summary
 pnpm --silent reader-fetch --limit 3 --with-content | pnpm summarize --with-original
@@ -191,16 +212,16 @@ pnpm openrouter-rank-free [options]
 
 ### Options
 
-| Flag | Default |
-| --- | --- |
-| `--min-params <Nb>` — minimum parameter count e.g. `27b` | `config.openrouter.min_param_b` |
-| `--max-age-days <n>` — max model age in days; `0` to disable | `config.openrouter.max_age_days` |
-| `--concurrency <n>` — parallel test workers | `config.openrouter.concurrency` |
-| `--timeout <ms>` — per-model timeout | `config.openrouter.timeout_ms` |
-| `--candidates <n>` — max candidates to output | `config.openrouter.max_candidates` |
-| `--smart <n>` — smart-first picks (newest + largest context) | `config.openrouter.smart_picks` |
-| `--runs <n>` — extra timing runs for median latency | `config.openrouter.extra_runs` |
-| `--verbose` — print progress to stderr | off |
+| Flag                                                         | Default                            |
+| ------------------------------------------------------------ | ---------------------------------- |
+| `--min-params <Nb>` — minimum parameter count e.g. `27b`     | `config.openrouter.min_param_b`    |
+| `--max-age-days <n>` — max model age in days; `0` to disable | `config.openrouter.max_age_days`   |
+| `--concurrency <n>` — parallel test workers                  | `config.openrouter.concurrency`    |
+| `--timeout <ms>` — per-model timeout                         | `config.openrouter.timeout_ms`     |
+| `--candidates <n>` — max candidates to output                | `config.openrouter.max_candidates` |
+| `--smart <n>` — smart-first picks (newest + largest context) | `config.openrouter.smart_picks`    |
+| `--runs <n>` — extra timing runs for median latency          | `config.openrouter.extra_runs`     |
+| `--verbose` — print progress to stderr                       | off                                |
 
 ### Example
 

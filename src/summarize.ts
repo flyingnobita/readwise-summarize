@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { Command } from "commander";
 import dotenv from "dotenv";
 import { readFileSync, writeFileSync, renameSync } from "fs";
@@ -73,9 +75,9 @@ async function main(): Promise<void> {
     verbose?: boolean;
   }>();
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.OPEN_ROUTER_SUMMARIZE_API;
   if (!apiKey) {
-    process.stderr.write("Error: OPENROUTER_API_KEY environment variable is not set.\n");
+    process.stderr.write("Error: OPEN_ROUTER_SUMMARIZE_API environment variable is not set.\n");
     process.exit(1);
   }
 
@@ -92,6 +94,7 @@ async function main(): Promise<void> {
     const ranked = await refreshFreeModels({
       apiUrl: config.openrouter.api_url,
       apiKey,
+      idSuffix: config.openrouter.id_suffix,
       minParamB: config.openrouter.min_param_b,
       maxAgeDays: config.openrouter.max_age_days,
       concurrency: config.openrouter.concurrency,

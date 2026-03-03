@@ -22,6 +22,7 @@ export interface RankedModel {
 export interface RefreshOptions {
   apiUrl: string;
   apiKey: string;
+  idSuffix: string;
   minParamB: number;
   maxAgeDays: number;
   concurrency: number;
@@ -77,11 +78,12 @@ export async function mapWithConcurrency<T, R>(
 }
 
 /**
- * Fetch all models from OpenRouter API and return only the free ones (id ends with `:free`).
+ * Fetch all models from OpenRouter API and return only those whose id ends with `idSuffix`.
  */
 export async function fetchFreeModels(
   apiUrl: string,
   apiKey: string,
+  idSuffix: string,
   fetchImpl: typeof fetch = fetch
 ): Promise<OpenRouterModel[]> {
   const url = `${apiUrl}/models`;
@@ -97,7 +99,7 @@ export async function fetchFreeModels(
   }
 
   const data = (await response.json()) as { data: OpenRouterModel[] };
-  return data.data.filter((m) => m.id.endsWith(":free"));
+  return data.data.filter((m) => m.id.endsWith(idSuffix));
 }
 
 /**
@@ -296,7 +298,7 @@ export async function refreshFreeModels(opts: RefreshOptions): Promise<RankedMod
   const { onProgress, fetchImpl } = opts;
 
   onProgress?.("Fetching free models from OpenRouter...");
-  const allFree = await fetchFreeModels(opts.apiUrl, opts.apiKey, fetchImpl);
+  const allFree = await fetchFreeModels(opts.apiUrl, opts.apiKey, opts.idSuffix, fetchImpl);
   onProgress?.(`Found ${allFree.length} free models.`);
 
   const filtered = filterModels(allFree, {

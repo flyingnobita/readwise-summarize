@@ -30,10 +30,10 @@ const instructions = readFileSync(
 dotenv.config();
 
 const READWISE_TOKEN = process.env.READWISE_TOKEN ?? "";
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
+const OPEN_ROUTER_SUMMARIZE_API = process.env.OPEN_ROUTER_SUMMARIZE_API ?? "";
 
 if (!READWISE_TOKEN) throw new Error("READWISE_TOKEN is not set in .env");
-if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY is not set in .env");
+if (!OPEN_ROUTER_SUMMARIZE_API) throw new Error("OPEN_ROUTER_SUMMARIZE_API is not set in .env");
 
 // Populated by the OpenRouter beforeAll; reused by the Summarize test.
 let verifiedModelId = "";
@@ -77,13 +77,13 @@ describe("OpenRouter API", () => {
   let freeModels: OpenRouterModel[] = [];
 
   beforeAll(async () => {
-    freeModels = await fetchFreeModels(config.openrouter.api_url, OPENROUTER_API_KEY);
+    freeModels = await fetchFreeModels(config.openrouter.api_url, OPEN_ROUTER_SUMMARIZE_API, config.openrouter.id_suffix);
     // Probe the first model and store it for reuse by the Summarize tests below.
     if (freeModels.length > 0) {
       const result = await testModel(
         freeModels[0].id,
         config.openrouter.api_url,
-        OPENROUTER_API_KEY,
+        OPEN_ROUTER_SUMMARIZE_API,
         30_000
       );
       if (result.success) verifiedModelId = result.modelId;
@@ -92,7 +92,7 @@ describe("OpenRouter API", () => {
 
   it("fetchFreeModels returns a non-empty list of :free-suffixed models", () => {
     expect(freeModels.length).toBeGreaterThan(0);
-    expect(freeModels.every((m) => m.id.endsWith(":free"))).toBe(true);
+    expect(freeModels.every((m) => m.id.endsWith(config.openrouter.id_suffix))).toBe(true);
   });
 
   it("testModel returns success and a positive latency for a live free model", () => {
@@ -136,7 +136,7 @@ describe("summarizeDocument", () => {
       },
       {
         apiUrl: config.openrouter.api_url,
-        apiKey: OPENROUTER_API_KEY,
+        apiKey: OPEN_ROUTER_SUMMARIZE_API,
         modelId: verifiedModelId,
         maxTokens: config.summarize.max_tokens,
         lengthInstruction: config.summarize.length_instruction,
@@ -191,7 +191,7 @@ describe("summarizeDocument with config.summarize.model", () => {
       },
       {
         apiUrl: config.openrouter.api_url,
-        apiKey: OPENROUTER_API_KEY,
+        apiKey: OPEN_ROUTER_SUMMARIZE_API,
         modelId: config.summarize.model,
         maxTokens: config.summarize.max_tokens,
         lengthInstruction: config.summarize.length_instruction,

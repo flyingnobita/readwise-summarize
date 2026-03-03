@@ -72,13 +72,13 @@ summarize.ts (stdin) -> summarize.ts (lib) -> OpenRouter chat/completions API ->
 ## Testing
 
 - Unit tests: `src/lib/**/*.test.ts` (run by default with `pnpm test`)
-- Integration tests: `src/integration.test.ts` (run with `pnpm test:integration`, requires `READWISE_TOKEN` and `OPENROUTER_API_KEY`)
+- Integration tests: `src/integration.test.ts` (run with `pnpm test:integration`, requires `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API`)
 - All lib functions use injected `fetchImpl` for mock-based testing; no network calls in unit tests
 
 ## Environment
 
 - Requires `READWISE_TOKEN` in `.env` (Readwise Reader API)
-- Requires `OPENROUTER_API_KEY` in `.env` (OpenRouter API, for `summarize` and `openrouter-rank-free`)
+- Requires `OPEN_ROUTER_SUMMARIZE_API` in `.env` (OpenRouter API, for `summarize` and `openrouter-rank-free`)
 - Runtime: Node 22, managed via `mise`
 - ESM project (`"type": "module"`); imports within `src/` use `.js` extensions
 - Config: `config.toml` at repo root, loaded once at startup via `src/lib/config.ts`

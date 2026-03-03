@@ -18,6 +18,7 @@ interface Config {
   };
   openrouter: {
     api_url: string;
+    id_suffix: string;
     min_param_b: number;
     max_age_days: number;
     concurrency: number;
