@@ -5,26 +5,15 @@ default_limit = 100
 timeout_ms = 30000
 
 [output]
-default_fields = [
-  "id",
-  "title",
-  "author",
-  "url",
-  "source_url",
-  "summary",
-  "tags",
-  "published_date",
-  "category",
-]
+default_fields = [ "id", "title", "author", "site_name", "url", "source_url", "summary", "tags", "published_date", "category" ]
 
 [openrouter]
 api_url = "https://openrouter.ai/api/v1"
-concurrency = 4
+concurrency = 1
 timeout_ms = 10000
 max_candidates = 10
 smart_picks = 3
 extra_runs = 2
-# Free Model Search Criteria
 id_suffix = ":free"
 min_param_b = 27
 max_age_days = 180
@@ -34,7 +23,7 @@ model = "nvidia/nemotron-3-nano-30b-a3b:free"
 max_tokens = 0
 length_instruction = "Target length: around 500 characters."
 timeout_ms = 30000
-concurrency = 3
+concurrency = 1
 temperature = 0.7
 system_prompt = "You are a precise summarization engine.\nFollow the user instructions in <instructions> exactly.\nNever mention sponsors/ads/promos or that they were skipped or ignored.\nDo not output sponsor/ad/promo language or brand names or CTA phrases.\nNever output the literal strings \"Title:\" or \"Headline:\" anywhere; use Markdown heading syntax (## Heading) instead.\nQuotation marks are allowed; use straight quotes only (no curly quotes).\nIf you include exact excerpts, italicize them in Markdown using single asterisks.\nInclude 1-2 short exact excerpts (max 25 words each) when the content provides a strong, non-sponsor line.\nNever include ad/sponsor/boilerplate excerpts."
 user_prompt_template = "<instructions>\n{instructions}\n</instructions>\n\n<context>\nSource URL: {url}\nTitle: {title}\nAuthor: {author}\n</context>\n\n<content>\n{html_content}\n</content>"

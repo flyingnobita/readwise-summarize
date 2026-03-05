@@ -2,17 +2,16 @@ Produce a concise, Markdown-native summary that is easy to scan.
 
 ## Required Output Rules
 
-1. Structure content with clear heading hierarchy (`#`, `##`, `###`) and list formatting.
+1. Structure content with list formatting.
 2. Convert full-sentence prose into short point-form bullets.
 3. Start every sub-point with 2-3 bold action words that capture the advice or insight.
+4. Do not start with a title or heading. Go straight to the bullet points.
 
 ## Formatting Standard
 
-1. Use one H1 title that reflects the source topic.
-2. Group ideas under H2 sections by theme.
-3. Use H3 sections only when a section needs further split.
-4. Keep bullets short, concrete, and non-redundant.
-5. Preserve critical facts, dates, numbers, and constraints from source text.
+1. Use 2-5 bullet points, and only as many as needed.
+2. Keep bullets short, concrete, and non-redundant.
+3. Preserve critical facts, dates, numbers, and constraints from source text.
 
 ## Action Prefix Pattern
 
@@ -30,6 +29,5 @@ Examples:
 
 1. Identify the source's primary objective and major themes.
 2. Extract key facts and decisions that must be preserved.
-3. Rewrite into point form under a logical heading hierarchy.
-4. Prefix each sub-point with bold 2-3 word actions.
-5. Perform a final pass to remove fluff and tighten phrasing.
+3. Prefix each sub-point with bold 2-3 word actions.
+4. Perform a final pass to remove fluff and tighten phrasing.

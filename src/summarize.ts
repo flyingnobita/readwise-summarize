@@ -2,8 +2,8 @@
 
 import { Command } from "commander";
 import dotenv from "dotenv";
-import { readFileSync, writeFileSync, renameSync } from "fs";
-import { join, dirname } from "path";
+import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync } from "fs";
+import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import { parse, stringify } from "smol-toml";
 import { config } from "./lib/config.js";
@@ -40,7 +40,8 @@ async function main(): Promise<void> {
 
   program
     .name("summarize")
-    .description("Reads JSON array from stdin (output of reader-fetch --with-content)")
+    .description("Summarize articles from a reader-fetch output file, or from stdin if no file given")
+    .argument("[file]", "Path to articles-YYYY-MM-DD.json produced by reader-fetch")
     .option(
       "--model <id>",
       "Model ID e.g. google/gemma-3-27b-it:free (default: config.summarize.model)"
@@ -63,6 +64,8 @@ async function main(): Promise<void> {
       String(config.summarize.timeout_ms)
     )
     .option("--verbose", "Print progress to stderr")
+    .option("--output-dir <dir>", "Directory to write <prefix>-YYYY-MM-DD.json (default: stdout)")
+    .option("--prefix <name>", "Filename prefix for output file (default: summaries)")
     .parse();
 
   const opts = program.opts<{
@@ -73,6 +76,8 @@ async function main(): Promise<void> {
     maxTokens: string;
     timeout: string;
     verbose?: boolean;
+    outputDir?: string;
+    prefix?: string;
   }>();
 
   const apiKey = process.env.OPEN_ROUTER_SUMMARIZE_API;
@@ -139,29 +144,54 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Read stdin
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
-  }
-  const input = Buffer.concat(chunks).toString("utf-8").trim();
+  // Read input: file argument or stdin
+  const inputFile = program.args[0] as string | undefined;
+  let input: string;
 
-  if (!input) {
-    process.stderr.write("Error: No input received from stdin.\n");
-    process.exit(1);
+  if (inputFile) {
+    if (!existsSync(inputFile)) {
+      process.stderr.write(`Error: File not found: ${inputFile}\n`);
+      process.exit(1);
+    }
+    input = readFileSync(inputFile, "utf-8").trim();
+  } else {
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
+    }
+    input = Buffer.concat(chunks).toString("utf-8").trim();
+    if (!input) {
+      process.stderr.write("Error: No input received from stdin.\n");
+      process.exit(1);
+    }
   }
 
   let docs: OutputDocument[];
   try {
-    docs = JSON.parse(input) as OutputDocument[];
+    const parsed = JSON.parse(input) as unknown;
+    // Envelope format from reader-fetch
+    if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const envelope = parsed as Record<string, unknown>;
+      if (envelope["complete"] !== true) {
+        process.stderr.write("Error: Input file is incomplete or was not fully written.\n");
+        process.exit(1);
+      }
+      docs = envelope["documents"] as OutputDocument[];
+    } else if (Array.isArray(parsed)) {
+      // Legacy: bare array from stdin
+      docs = parsed as OutputDocument[];
+    } else {
+      process.stderr.write("Error: Input must be a JSON object (envelope) or array.\n");
+      process.exit(1);
+    }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`Error: Failed to parse stdin as JSON: ${msg}\n`);
+    process.stderr.write(`Error: Failed to parse input as JSON: ${msg}\n`);
     process.exit(1);
   }
 
   if (!Array.isArray(docs)) {
-    process.stderr.write("Error: stdin must be a JSON array.\n");
+    process.stderr.write("Error: documents field must be a JSON array.\n");
     process.exit(1);
   }
 
@@ -187,7 +217,21 @@ async function main(): Promise<void> {
     verbose ? (msg) => process.stderr.write(msg + "\n") : undefined
   );
 
-  process.stdout.write(JSON.stringify(results, null, 2) + "\n");
+  if (opts.outputDir) {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const outDir = resolve(opts.outputDir);
+    const prefix = opts.prefix ?? "summaries";
+    mkdirSync(outDir, { recursive: true });
+    const outPath = join(outDir, `${prefix}-${dateStr}.json`);
+    const tmpPath = outPath + ".tmp";
+    writeFileSync(tmpPath, JSON.stringify(results, null, 2) + "\n", "utf-8");
+    renameSync(tmpPath, outPath);
+    process.stderr.write(`Output: ${outPath}\n`);
+  } else {
+    process.stdout.write(JSON.stringify(results, null, 2) + "\n");
+  }
 }
 
 main().catch((err: unknown) => {

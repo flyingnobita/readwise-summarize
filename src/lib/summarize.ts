@@ -39,6 +39,7 @@ export interface SummarizedDocument {
   id?: string;
   title?: string;
   author?: string;
+  site_name?: string;
   link: string;
   ai_summary: string;
   original_summary?: string;
@@ -55,6 +56,7 @@ export async function summarizeDocument(
     id: doc.id as string | undefined,
     title: doc.title as string | undefined,
     author: doc.author as string | undefined,
+    site_name: doc.site_name as string | undefined,
     link,
     ai_summary: "",
   };
