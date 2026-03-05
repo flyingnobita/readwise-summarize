@@ -4,6 +4,7 @@ import {
   filterByPublishedSince,
   filterByAuthor,
   buildFields,
+  ALL_FIELDS,
 } from "./transform.js";
 import type { ReaderDocument } from "./types.js";
 
@@ -102,6 +103,17 @@ describe("buildFields", () => {
     const copy = [...defaults];
     buildFields(defaults, true);
     expect(defaults).toEqual(copy);
+  });
+
+  it('returns all available fields when passed ["all"]', () => {
+    const result = buildFields(["all"], false);
+    expect(result).toEqual([...ALL_FIELDS]);
+  });
+
+  it('ignores withContent when passed ["all"] since html_content is already included', () => {
+    const result = buildFields(["all"], true);
+    expect(result).toEqual([...ALL_FIELDS]);
+    expect(result.filter((f) => f === "html_content")).toHaveLength(1);
   });
 });
 

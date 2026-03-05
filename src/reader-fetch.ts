@@ -59,7 +59,7 @@ async function main(): Promise<void> {
     .option("--all", "Paginate through all pages; omit for first page only")
     .option(
       "--fields <fields>",
-      `Comma-separated fields to include in output; omit for defaults (${DEFAULT_FIELDS_STR})`,
+      `Comma-separated fields to include in output, or "all" for every available field; omit for defaults (${DEFAULT_FIELDS_STR})`,
       DEFAULT_FIELDS_STR
     )
     .option("--output-dir <dir>", "Directory to write <prefix>-YYYY-MM-DD.json (default: cwd)")

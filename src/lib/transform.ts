@@ -1,10 +1,35 @@
 import type { OutputDocument, ReaderDocument } from "./types.js";
 
+export const ALL_FIELDS = [
+  "id",
+  "title",
+  "author",
+  "site_name",
+  "url",
+  "source_url",
+  "category",
+  "location",
+  "tags",
+  "word_count",
+  "reading_time",
+  "created_at",
+  "updated_at",
+  "published_date",
+  "summary",
+  "image_url",
+  "reading_progress",
+  "html_content",
+] as const;
+
 /**
  * Build the output field list from the configured default fields,
  * automatically appending "html_content" when withContent is true.
+ * Pass "all" as the sole element to include every available field.
  */
 export function buildFields(defaultFields: string[], withContent: boolean): string[] {
+  if (defaultFields.length === 1 && defaultFields[0] === "all") {
+    return [...ALL_FIELDS];
+  }
   const fields = [...defaultFields];
   if (withContent && !fields.includes("html_content")) {
     fields.push("html_content");
