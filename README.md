@@ -309,3 +309,11 @@ config.toml                       # All runtime configuration
 vitest.config.ts                  # Unit test config
 vitest.integration.config.ts      # Integration test config
 ```
+
+## Credit
+
+[https://github.com/steipete/summarize](https://github.com/steipete/summarize) for the summarize tool
+
+## License
+
+MIT
