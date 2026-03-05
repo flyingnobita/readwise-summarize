@@ -27,6 +27,7 @@ export function transformDocument(
     id: doc.id,
     title: doc.title,
     author: doc.author,
+    site_name: doc.site_name,
     url: doc.url,
     source_url: doc.source_url,
     category: doc.category,

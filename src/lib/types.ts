@@ -4,6 +4,7 @@ export interface ReaderDocument {
   source_url: string;
   title: string;
   author: string;
+  site_name?: string;
   category: string;
   location: string;
   tags: Record<string, { name: string }>;
@@ -28,6 +29,7 @@ export interface OutputDocument {
   id?: string;
   title?: string;
   author?: string;
+  site_name?: string;
   url?: string;
   source_url?: string;
   category?: string;

@@ -2,6 +2,8 @@
 
 import { Command } from "commander";
 import dotenv from "dotenv";
+import { writeFileSync, renameSync, mkdirSync } from "fs";
+import { join, resolve } from "path";
 import { config } from "./lib/config.js";
 import { parseDate } from "./lib/parse-date.js";
 import { fetchAllDocuments } from "./lib/api.js";
@@ -53,13 +55,16 @@ async function main(): Promise<void> {
       "Client-side: case-insensitive substring match on author; omit for all authors"
     )
     .option("--with-content", "Include full HTML content (html_content field); omit to exclude")
-    .option("--limit <n>", "Max results per page, 1-100; omit for API default (100)", String(config.api.default_limit))
+    .option("--limit <n>", "Max results per page (1-100); values outside this range are ignored and the API default (100) is used", String(config.api.default_limit))
     .option("--all", "Paginate through all pages; omit for first page only")
     .option(
       "--fields <fields>",
       `Comma-separated fields to include in output; omit for defaults (${DEFAULT_FIELDS_STR})`,
       DEFAULT_FIELDS_STR
     )
+    .option("--output-dir <dir>", "Directory to write <prefix>-YYYY-MM-DD.json (default: cwd)")
+    .option("--prefix <name>", "Filename prefix for output file (default: articles)")
+    .option("--verbose", "Print progress to stderr")
     .parse();
 
   const opts = program.opts<{
@@ -73,7 +78,15 @@ async function main(): Promise<void> {
     limit: string;
     all?: boolean;
     fields: string;
+    outputDir?: string;
+    prefix?: string;
+    verbose?: boolean;
   }>();
+
+  const verbose = opts.verbose ?? false;
+  const log = (msg: string) => {
+    if (verbose) process.stderr.write(msg + "\n");
+  };
 
   const token = process.env.READWISE_TOKEN;
   if (!token) {
@@ -94,21 +107,25 @@ async function main(): Promise<void> {
     ? parseDateOpt("--updated-after", opts.updatedAfter)
     : null;
 
-  const params: Record<string, string> = { limit: opts.limit };
+  const limitNum = parseInt(opts.limit, 10);
+  const params: Record<string, string> = {};
+  if (!isNaN(limitNum) && limitNum >= 1 && limitNum <= 100) {
+    params["limit"] = opts.limit;
+  }
   if (opts.location) params["location"] = opts.location;
   if (opts.tag !== undefined) params["tag"] = opts.tag;
   if (opts.category) params["category"] = opts.category;
   if (updatedAfterDate) params["updatedAfter"] = updatedAfterDate.toISOString();
   if (opts.withContent) params["withHtmlContent"] = "true";
 
-  process.stderr.write("Fetching from Readwise Reader...\n");
+  log("Fetching from Readwise Reader...");
 
   let rawDocs;
   try {
     rawDocs = await fetchAllDocuments(token, params, {
       paginate: opts.all ?? false,
       onPage: (pageNum, count) => {
-        process.stderr.write(`  Page ${pageNum}: ${count} results\n`);
+        log(`  Page ${pageNum}: ${count} results`);
       },
     });
   } catch (err) {
@@ -123,8 +140,28 @@ async function main(): Promise<void> {
 
   const output = filtered.map((doc) => transformDocument(doc, fields));
 
-  process.stderr.write(`Total: ${output.length} documents\n`);
-  process.stdout.write(JSON.stringify(output, null, 2) + "\n");
+  log(`Total: ${output.length} documents`);
+
+  // Build dated output filename
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const outDir = resolve(opts.outputDir ?? ".");
+  const prefix = opts.prefix ?? "articles";
+  mkdirSync(outDir, { recursive: true });
+  const outPath = join(outDir, `${prefix}-${dateStr}.json`);
+  const tmpPath = outPath + ".tmp";
+
+  const envelope = {
+    complete: true,
+    count: output.length,
+    generated_at: now.toISOString(),
+    documents: output,
+  };
+
+  writeFileSync(tmpPath, JSON.stringify(envelope, null, 2) + "\n", "utf-8");
+  renameSync(tmpPath, outPath);
+  log(`Output: ${outPath}`);
 }
 
 main();
