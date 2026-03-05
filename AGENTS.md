@@ -5,11 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Fetch articles from Readwise Reader
+# Fetch articles from Readwise Reader (writes articles-YYYY-MM-DD.json to cwd or --output-dir)
 pnpm reader-fetch [options]
-pnpm --silent reader-fetch [options]       # suppress pnpm header for piping
 
-# Generate AI summaries from reader-fetch output
+# Generate AI summaries from a reader-fetch output file (stdout or --output-dir)
+pnpm summarize <file> [options]
+
+# Legacy: pipe reader-fetch output directly to summarize
 pnpm --silent reader-fetch --with-content [options] | pnpm summarize [options]
 
 # Scan and rank free OpenRouter models
@@ -33,14 +35,14 @@ pnpm test:integration
 
 ## Architecture
 
-TypeScript CLI toolkit for fetching Readwise Reader articles and generating AI summaries via OpenRouter. All output goes to stdout as JSON; progress and errors go to stderr.
+TypeScript CLI toolkit for fetching Readwise Reader articles and generating AI summaries via OpenRouter. Progress and errors go to stderr; `summarize` output goes to stdout as JSON.
 
-**Pipelines:**
+**Daily workflow:**
 
 ```
-reader-fetch.ts -> api.ts (fetch & paginate) -> transform.ts (filter & shape) -> stdout
-                                                                                    |
-summarize.ts (stdin) -> summarize.ts (lib) -> OpenRouter chat/completions API -> stdout
+reader-fetch.ts -> api.ts (fetch & paginate) -> transform.ts (filter & shape) -> articles-YYYY-MM-DD.json
+                                                                                          |
+summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API -> stdout
 ```
 
 **Key design decisions:**
@@ -54,6 +56,9 @@ summarize.ts (stdin) -> summarize.ts (lib) -> OpenRouter chat/completions API ->
 - Date parsing uses `chrono-node` for natural language with ISO 8601 as fallback.
 - LLM prompt and model parameters (system_prompt, user_prompt_template, temperature, max_tokens) are fully configurable in `config.toml`.
 - `--scan-free` probes live OpenRouter free models and atomically updates `config.toml` with the top result (write temp → rename).
+- `reader-fetch` writes output atomically: writes to `articles-YYYY-MM-DD.json.tmp` then renames to `articles-YYYY-MM-DD.json`. The JSON envelope wraps the documents array with `complete: true`, `count`, and `generated_at` metadata. `summarize` validates `complete === true` before processing.
+- `summarize` accepts an optional positional file argument; falls back to stdin for legacy pipe usage. Stdin accepts either the envelope format or a bare JSON array.
+- `summarize --output-dir <dir>` writes `summaries-YYYY-MM-DD.json` atomically (write temp → rename); falls back to stdout if omitted.
 - `fetchImpl` is injected via options in both `summarize.ts` and `openrouter.ts` for testability without network calls.
 
 **Module responsibilities:**
@@ -65,15 +70,29 @@ summarize.ts (stdin) -> summarize.ts (lib) -> OpenRouter chat/completions API ->
 - `src/lib/parse-date.ts` — `parseDate` (chrono-node + ISO 8601 fallback)
 - `src/lib/openrouter.ts` — `fetchFreeModels`, `filterModels`, `testModel`, `buildSelection`, `refreshFreeModels`, `mapWithConcurrency`, `inferParamBFromIdOrName`
 - `src/lib/summarize.ts` — `summarizeDocument`, `summarizeDocuments` (uses `mapWithConcurrency`)
-- `src/reader-fetch.ts` — CLI wiring via `commander`, reads `READWISE_TOKEN` from env
-- `src/summarize.ts` — CLI: reads stdin JSON, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` config update
+- `src/reader-fetch.ts` — CLI wiring via `commander`, reads `READWISE_TOKEN` from env, writes dated JSON envelope file
+- `src/summarize.ts` — CLI: reads file arg or stdin JSON, validates envelope, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` config update
 - `src/openrouter-rank-free.ts` — CLI: calls `refreshFreeModels`, outputs ranked JSON
 
 ## Testing
 
 - Unit tests: `src/lib/**/*.test.ts` (run by default with `pnpm test`)
+- CLI unit tests: `src/*.test.ts` (also run with `pnpm test`; use subprocess via `tsx` for CLI entrypoint testing)
 - Integration tests: `src/integration.test.ts` (run with `pnpm test:integration`, requires `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API`)
 - All lib functions use injected `fetchImpl` for mock-based testing; no network calls in unit tests
+
+**All code changes must include a build.** Run `pnpm build` after changes so the compiled `dist/` binaries stay in sync with source. The installed CLI commands (`reader-fetch`, `summarize`, `openrouter-rank-free`) run from `dist/` and will not reflect source changes until rebuilt.
+
+**All code changes must be accompanied by tests.** This is a hard requirement:
+- New lib functions → unit tests in `src/lib/*.test.ts`
+- New CLI flags or entrypoint behavior → unit tests in `src/*.test.ts` (subprocess-based)
+- Any behavior that touches live APIs or the filesystem end-to-end → integration tests in `src/integration.test.ts`
+- A feature is not complete until `pnpm test` and `pnpm test:integration` both pass
+
+**All code changes must also update documentation.** This is a hard requirement:
+- `README.md` — update affected CLI options tables, examples, and output format sections
+- `AGENTS.md` — update architecture, key design decisions, and module responsibilities as needed
+- `CHANGELOG.md` — add an entry for every meaningful change
 
 ## Environment
 

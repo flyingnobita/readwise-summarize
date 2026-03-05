@@ -30,6 +30,13 @@ This installs these commands on your machine:
 - `summarize`
 - `openrouter-rank-free`
 
+If installed globally, you can run them directly without the `pnpm` prefix. For example:
+
+```bash
+reader-fetch --limit 5
+reader-fetch --category rss --limit 5 --with-content | summarize --verbose
+```
+
 To create a distributable tarball (still local):
 
 ```bash
@@ -47,7 +54,19 @@ Get your Readwise token at [readwise.io/access_token](https://readwise.io/access
 
 ## Pipeline
 
-The tools are designed to be piped together. Use `--silent` on `reader-fetch` to suppress the pnpm header from entering the pipe:
+The tools are designed for a two-step daily workflow: fetch first, summarize second.
+
+```bash
+# Step 1: fetch and write to a dated file
+reader-fetch --category rss --with-content --all --output-dir /data/articles
+
+# Step 2: summarize from that file, write summaries to a dated file
+summarize /data/articles/articles-2026-03-05.json --output-dir /data/summaries
+```
+
+`reader-fetch` writes `articles-YYYY-MM-DD.json` using the machine's local timezone. The file is written atomically (`.tmp` + rename), so `summarize` will never read a partially-written file. The JSON envelope includes a `complete: true` field as a secondary integrity check.
+
+Stdin piping is still supported for ad-hoc use:
 
 ```bash
 pnpm --silent reader-fetch --category rss --limit 5 --with-content | pnpm summarize --verbose
@@ -57,7 +76,7 @@ pnpm --silent reader-fetch --category rss --limit 5 --with-content | pnpm summar
 
 ## `reader-fetch`
 
-Fetches articles from Readwise Reader and writes a JSON array to stdout.
+Fetches articles from Readwise Reader and writes a dated JSON file to disk.
 
 ```bash
 pnpm reader-fetch [options]
@@ -84,8 +103,11 @@ pnpm reader-fetch [options]
 | `--published-since <date>` — ISO 8601 or natural language       | No date filter             |
 | `--author <name>` — case-insensitive substring match            | All authors                |
 | `--fields <fields>` — comma-separated list of fields to include | Default fields (see below) |
+| `--output-dir <dir>` — directory to write the output file       | Current working directory  |
+| `--prefix <name>` — filename prefix for output file             | `articles`                 |
+| `--verbose` — print progress to stderr                          | off                        |
 
-**Default output fields:** `id`, `title`, `author`, `url`, `source_url`, `summary`, `tags`, `published_date`, `category`
+**Default output fields:** `id`, `title`, `author`, `site_name`, `url`, `source_url`, `summary`, `tags`, `published_date`, `category`
 
 ### Examples
 
@@ -96,8 +118,8 @@ pnpm reader-fetch --limit 5
 # All email newsletters updated in the last week
 pnpm reader-fetch --category email --updated-after "1 week ago" --all
 
-# RSS articles with full HTML content (for summarization)
-pnpm reader-fetch --category rss --limit 10 --with-content
+# RSS articles with full HTML content (for summarization), saved to /data/articles
+pnpm reader-fetch --category rss --limit 10 --with-content --output-dir /data/articles
 
 # Articles by a specific author updated yesterday
 pnpm reader-fetch --author "Lenny" --category email --updated-after yesterday
@@ -108,26 +130,33 @@ pnpm reader-fetch --category rss --published-since 2026-02-01 --all
 
 ### Output Format
 
-JSON array written to stdout; progress and errors go to stderr.
+Writes `<prefix>-YYYY-MM-DD.json` to the output directory (date from machine local timezone; prefix defaults to `articles`). Progress and errors go to stderr.
 
 ```json
-[
-  {
-    "id": "01kjpww0aa1w5wc2gfvv9m3jr5",
-    "title": "Article Title",
-    "author": "Author Name",
-    "url": "https://read.readwise.io/read/...",
-    "source_url": "https://original-site.com/article",
-    "summary": "A brief summary of the article.",
-    "tags": ["ai", "research"],
-    "published_date": "2026-02-26T00:00:00.000Z",
-    "category": "rss"
-  }
-]
+{
+  "complete": true,
+  "count": 42,
+  "generated_at": "2026-03-05T10:00:00.000Z",
+  "documents": [
+    {
+      "id": "01kjpww0aa1w5wc2gfvv9m3jr5",
+      "title": "Article Title",
+      "author": "Author Name",
+      "site_name": "Site Name",
+      "url": "https://read.readwise.io/read/...",
+      "source_url": "https://original-site.com/article",
+      "summary": "A brief summary of the article.",
+      "tags": ["ai", "research"],
+      "published_date": "2026-02-26T00:00:00.000Z",
+      "category": "rss"
+    }
+  ]
+}
 ```
 
 **Field notes:**
 
+- `complete` — always `true`; signals the file was fully and successfully written
 - `tags` — flattened to an array of strings
 - `source_url` — original article URL; `url` is the Readwise Reader URL
 - `published_date` — ISO 8601 string, or `null` if not set
@@ -137,11 +166,13 @@ JSON array written to stdout; progress and errors go to stderr.
 
 ## `summarize`
 
-Reads a JSON array from stdin (output of `reader-fetch --with-content`) and writes AI-generated summaries to stdout.
+Reads a `reader-fetch` output file and writes AI-generated summaries to stdout.
 
 ```bash
-pnpm --silent reader-fetch [options] | pnpm summarize [options]
+pnpm summarize [options] <file>
 ```
+
+Falls back to reading a JSON array from stdin if no file argument is given (legacy pipe usage).
 
 ### Options
 
@@ -154,6 +185,8 @@ pnpm --silent reader-fetch [options] | pnpm summarize [options]
 | `--max-tokens <n>` — max tokens per summary                                        | `config.summarize.max_tokens`  |
 | `--timeout <ms>` — per-request timeout                                             | `config.summarize.timeout_ms`  |
 | `--verbose` — print progress to stderr                                             | off                            |
+| `--output-dir <dir>` — directory to write `<prefix>-YYYY-MM-DD.json`               | stdout                         |
+| `--prefix <name>` — filename prefix for output file                                | `summaries`                    |
 
 **Model resolution order:** `--model` → `--scan-free` result → `config.summarize.model` → error
 
@@ -170,19 +203,22 @@ system_prompt = "You are a concise article summarizer. Summarize the article in 
 user_prompt_template = "Title: {title}\nAuthor: {author}\n\n{html_content}"
 ```
 
-The `user_prompt_template` supports `{title}`, `{author}`, and `{html_content}` placeholders.
+The `user_prompt_template` supports `{title}`, `{author}`, `{url}`, and `{html_content}` placeholders.
 
 ### Examples
 
 ```bash
-# Summarize today's RSS feed using the configured model
-pnpm --silent reader-fetch --category rss --updated-after today --with-content | pnpm summarize --verbose
+# Summarize today's fetch using the configured model
+pnpm summarize articles-2026-03-05.json --verbose
+
+# Write summaries to a dated file instead of stdout
+pnpm summarize articles-2026-03-05.json --output-dir /data/summaries
 
 # Auto-select the best free model, then summarize
-pnpm --silent reader-fetch --category rss --limit 2 --with-content | pnpm summarize --scan-free --verbose
+pnpm summarize articles-2026-03-05.json --scan-free --verbose
 
 # Include the original Readwise summary alongside the AI summary
-pnpm --silent reader-fetch --limit 3 --with-content | pnpm summarize --with-original
+pnpm summarize articles-2026-03-05.json --with-original
 ```
 
 ### Output Format
@@ -193,6 +229,7 @@ pnpm --silent reader-fetch --limit 3 --with-content | pnpm summarize --with-orig
     "id": "01kjpww0aa1w5wc2gfvv9m3jr5",
     "title": "Article Title",
     "author": "Author Name",
+    "site_name": "Site Name",
     "link": "https://original-site.com/article",
     "ai_summary": "AI-generated summary of the article.",
     "original_summary": "Original Readwise summary (only with --with-original)."
