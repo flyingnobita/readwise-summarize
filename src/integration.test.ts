@@ -200,7 +200,7 @@ describe("summarize CLI end-to-end pipeline", () => {
     for (const doc of output) {
       expect(typeof doc["ai_summary"]).toBe("string");
       expect(doc["ai_summary"]).not.toMatch(/^\[summarization failed/);
-      expect(doc["link"]).toBeTruthy();
+      expect(doc["readwise"]).toBeTruthy();
     }
   }, 65_000);
 });
@@ -289,7 +289,7 @@ describe("summarizeDocument", () => {
     expect(result.ai_summary).not.toBe("[no content available]");
     expect(result.ai_summary).not.toMatch(/^\[summarization failed/);
     expect(result.ai_summary.length).toBeGreaterThan(20);
-    expect(result.link).toBeTruthy();
+    expect(result.readwise).toBeTruthy();
     expect(result.original_summary).toBe(doc.summary);
   }, 60_000);
 });
@@ -344,6 +344,6 @@ describe("summarizeDocument with config.summarize.model", () => {
     expect(result.ai_summary).not.toBe("[no content available]");
     expect(result.ai_summary).not.toMatch(/^\[summarization failed/);
     expect(result.ai_summary.length).toBeGreaterThan(50);
-    expect(result.link).toBeTruthy();
+    expect(result.readwise).toBeTruthy();
   }, 90_000);
 });

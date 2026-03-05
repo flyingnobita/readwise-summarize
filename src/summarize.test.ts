@@ -146,11 +146,12 @@ describe("summarize CLI — file argument success", () => {
     expect(output).toHaveLength(3);
   });
 
-  it("preserves title, author, and link in output", () => {
+  it("preserves title, author, readwise URL, and source_url in output", () => {
     const doc = {
       id: "1",
       title: "My Title",
       author: "My Author",
+      location: "feed",
       source_url: "https://original.com",
       url: "https://reader.com",
     };
@@ -160,11 +161,13 @@ describe("summarize CLI — file argument success", () => {
     const [out] = JSON.parse(result.stdout) as Array<{
       title: string;
       author: string;
-      link: string;
+      readwise: string;
+      source_url: string;
     }>;
     expect(out.title).toBe("My Title");
     expect(out.author).toBe("My Author");
-    expect(out.link).toBe("https://original.com"); // source_url takes precedence over url
+    expect(out.readwise).toBe("https://reader.com");
+    expect(out.source_url).toBe("https://original.com");
   });
 });
 

@@ -35,12 +35,15 @@ export interface SummarizeOptions {
   onDebug?: (msg: string) => void;
 }
 
+const LIBRARY_AND_FEED_LOCATIONS = new Set(["feed", "new", "later", "shortlist", "archive"]);
+
 export interface SummarizedDocument {
   id?: string;
   title?: string;
   author?: string;
   site_name?: string;
-  link: string;
+  readwise: string;
+  source_url?: string;
   ai_summary: string;
   original_summary?: string;
 }
@@ -50,16 +53,21 @@ export async function summarizeDocument(
   opts: SummarizeOptions
 ): Promise<SummarizedDocument> {
   const fetchImpl = opts.fetchImpl ?? fetch;
-  const link = (doc.source_url as string | undefined) ?? (doc.url as string) ?? "";
+  const readwise = (doc.url as string) ?? "";
 
   const base: SummarizedDocument = {
     id: doc.id as string | undefined,
     title: doc.title as string | undefined,
     author: doc.author as string | undefined,
     site_name: doc.site_name as string | undefined,
-    link,
+    readwise,
     ai_summary: "",
   };
+
+  const docLocation = doc.location as string | undefined;
+  if (docLocation && LIBRARY_AND_FEED_LOCATIONS.has(docLocation) && doc.source_url) {
+    base.source_url = doc.source_url as string;
+  }
 
   if (opts.withOriginal && doc.summary) {
     base.original_summary = doc.summary as string;
@@ -99,7 +107,7 @@ export async function summarizeDocument(
             role: "user",
             content: opts.userPromptTemplate
               .replace("{instructions}", instructions)
-              .replace("{url}", link)
+              .replace("{url}", readwise)
               .replace("{title}", doc.title ?? "")
               .replace("{author}", doc.author ?? "")
               .replace("{html_content}", compactMarkdown(doc.html_content ?? "")),

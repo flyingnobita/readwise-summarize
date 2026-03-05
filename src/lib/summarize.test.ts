@@ -102,7 +102,7 @@ describe("summarizeDocument", () => {
     expect(result.id).toBe("doc-1");
     expect(result.title).toBe("Test Article");
     expect(result.author).toBe("Test Author");
-    expect(result.link).toBe("https://example.com/article");
+    expect(result.readwise).toBe("https://example.com/article");
 
     expect(mockFetch).toHaveBeenCalledOnce();
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
@@ -207,7 +207,7 @@ describe("summarizeDocument", () => {
     expect(body.messages[1].content).toBe("<instructions>\nSummarize concisely.\n</instructions>");
   });
 
-  it("uses source_url over url for link field", async () => {
+  it("readwise field always uses doc.url", async () => {
     const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
     const doc = makeDoc({
       url: "https://reader.example.com/item",
@@ -215,7 +215,57 @@ describe("summarizeDocument", () => {
     });
 
     const result = await summarizeDocument(doc, makeOpts({ fetchImpl: mockFetch }));
-    expect(result.link).toBe("https://original.example.com/article");
+    expect(result.readwise).toBe("https://reader.example.com/item");
+  });
+
+  it("includes source_url when location is 'feed'", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    const doc = makeDoc({ location: "feed", source_url: "https://feed.example.com/rss" });
+
+    const result = await summarizeDocument(doc, makeOpts({ fetchImpl: mockFetch }));
+    expect(result.source_url).toBe("https://feed.example.com/rss");
+  });
+
+  it("includes source_url when location is a library location", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    for (const location of ["new", "later", "shortlist", "archive"]) {
+      const doc = makeDoc({ location, source_url: "https://original.example.com/article" });
+      const result = await summarizeDocument(doc, makeOpts({ fetchImpl: mockFetch }));
+      expect(result.source_url).toBe("https://original.example.com/article");
+    }
+  });
+
+  it("omits source_url when location is absent", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    const doc = makeDoc({ location: undefined, source_url: "https://original.example.com/article" });
+
+    const result = await summarizeDocument(doc, makeOpts({ fetchImpl: mockFetch }));
+    expect(result.source_url).toBeUndefined();
+  });
+
+  it("omits source_url when source_url field is absent", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    const doc = makeDoc({ location: "feed", source_url: undefined });
+
+    const result = await summarizeDocument(doc, makeOpts({ fetchImpl: mockFetch }));
+    expect(result.source_url).toBeUndefined();
+  });
+
+  it("uses doc.url for the {url} placeholder in the prompt template", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeSuccessResponse("summary"));
+    const opts = makeOpts({
+      fetchImpl: mockFetch,
+      userPromptTemplate: "URL: {url}",
+    });
+    const doc = makeDoc({
+      url: "https://reader.example.com/item",
+      source_url: "https://original.example.com/article",
+    });
+
+    await summarizeDocument(doc, opts);
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    expect(body.messages[1].content).toContain("URL: https://reader.example.com/item");
   });
 
   it("includes original_summary when withOriginal is true", async () => {
