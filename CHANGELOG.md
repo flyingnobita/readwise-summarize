@@ -1,5 +1,8 @@
 # Changelog
 
+- Mar-10, 2026 - 04:50 PM SGT - Release 1.0.1: add `pnpm set-github-secrets`, streamline README release/setup flow, and finalize GitHub trusted-publishing automation docs
+- Mar-10, 2026 - 04:38 PM SGT - Harden `pnpm set-github-secrets` to read exported env vars first, fall back to `.env`, and validate `gh` authentication before upload
+- Mar-10, 2026 - 04:25 PM SGT - Add `pnpm set-github-secrets` helper to upload `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API` to GitHub Actions with `gh`
 - Mar-10, 2026 - 04:15 PM SGT - Reorganize README for both npm users and contributors: move credential setup into configuration, align config defaults, and refresh project structure docs
 - Mar-10, 2026 - 04:01 PM SGT - Switch GitHub Actions npm publishing docs and workflow to trusted-publishing-only; remove `NPM_TOKEN` dependency from CI
 - Mar-10, 2026 - 03:45 PM SGT - Add GitHub Actions npm publish automation on GitHub release publication with tag/version verification and CI verification gates

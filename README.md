@@ -129,6 +129,27 @@ gh release create vX.Y.Z --verify-tag --title "vX.Y.Z" --generate-notes
 
 Publishing a GitHub release for the matching tag triggers the automated npm publish workflow.
 
+To configure the required GitHub Actions secrets from your machine:
+
+```bash
+pnpm set-github-secrets
+```
+
+The helper uses `gh secret set` to upload:
+
+- `READWISE_TOKEN`
+- `OPEN_ROUTER_SUMMARIZE_API`
+
+You can also pass the values non-interactively:
+
+```bash
+READWISE_TOKEN=your_token_here \
+OPEN_ROUTER_SUMMARIZE_API=your_key_here \
+pnpm set-github-secrets
+```
+
+The helper now prefers exported environment variables first and falls back to `.env` automatically.
+
 ## Pipeline
 
 The tools are designed for a two-step daily workflow: fetch first, summarize second.

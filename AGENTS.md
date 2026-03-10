@@ -20,6 +20,9 @@ pnpm openrouter-rank-free [options]
 # Run the prepared release workflow
 pnpm release [version] [options]
 
+# Upload required GitHub Actions secrets for release automation
+pnpm set-github-secrets
+
 # Type-check
 pnpm exec tsc --noEmit
 
@@ -65,6 +68,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `fetchImpl` is injected via options in both `summarize.ts` and `openrouter.ts` for testability without network calls.
 - `pnpm release` automates the prepared npm release workflow: clean-worktree check, verification, tag, push, publish, and GitHub release creation. It supports `--dry-run` and optional npm OTP input.
 - GitHub Actions can publish to npm on `release.published` after verifying the release tag matches `package.json` and rerunning the full verification suite in CI. npm publishing uses trusted publishing rather than an npm token.
+- `pnpm set-github-secrets` uploads `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API` to the GitHub repository with `gh secret set`.
 
 **Module responsibilities:**
 
@@ -78,6 +82,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `src/lib/release.ts` — release version validation and release command plan generation
 - `src/lib/summarize.ts` — `summarizeDocument`, `summarizeDocuments` (uses `mapWithConcurrency`)
 - `.github/workflows/publish-npm.yml` — publish workflow triggered by GitHub release publication; verifies tag/version alignment, runs verification, then publishes to npm
+- `scripts/set-github-secrets.sh` — helper for uploading the GitHub Actions secrets required by integration-test-gated release publishing
 - `src/reader-fetch.ts` — CLI wiring via `commander`, reads `READWISE_TOKEN` from env, writes dated JSON envelope file
 - `src/release.ts` — CLI: automates the prepared npm release workflow with dry-run and step-skipping flags
 - `src/summarize.ts` — CLI: reads file arg or stdin JSON, validates envelope, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` user-config update

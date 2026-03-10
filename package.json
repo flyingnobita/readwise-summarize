@@ -1,6 +1,6 @@
 {
   "name": "readwise-summarize",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI tools for fetching Readwise Reader content and generating AI summaries",
   "type": "module",
   "bin": {
@@ -20,6 +20,7 @@
     "build": "pnpm clean && tsc -p tsconfig.build.json",
     "prepack": "pnpm build",
     "release": "tsx src/release.ts",
+    "set-github-secrets": "bash scripts/set-github-secrets.sh",
     "reader-fetch": "tsx src/reader-fetch.ts",
     "openrouter-rank-free": "tsx src/openrouter-rank-free.ts",
     "summarize": "tsx src/summarize.ts",
