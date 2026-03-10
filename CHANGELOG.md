@@ -1,5 +1,7 @@
 # Changelog
 
+- Mar-10, 2026 - 05:03 PM SGT - Release 1.0.2: upgrade npm in GitHub trusted-publishing workflow to satisfy npm trusted-publishing requirements and unblock CI-based npm publish
+- Mar-10, 2026 - 05:00 PM SGT - Fix GitHub trusted-publishing workflow to upgrade npm before publish because npm trusted publishing requires npm CLI 11.5.1 or later
 - Mar-10, 2026 - 04:50 PM SGT - Release 1.0.1: add `pnpm set-github-secrets`, streamline README release/setup flow, and finalize GitHub trusted-publishing automation docs
 - Mar-10, 2026 - 04:38 PM SGT - Harden `pnpm set-github-secrets` to read exported env vars first, fall back to `.env`, and validate `gh` authentication before upload
 - Mar-10, 2026 - 04:25 PM SGT - Add `pnpm set-github-secrets` helper to upload `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API` to GitHub Actions with `gh`

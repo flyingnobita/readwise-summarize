@@ -35,6 +35,14 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
+      - name: Upgrade npm for trusted publishing
+        run: npm install --global npm@latest
+
+      - name: Show Node and npm versions
+        run: |
+          node --version
+          npm --version
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

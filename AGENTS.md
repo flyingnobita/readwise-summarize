@@ -68,6 +68,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `fetchImpl` is injected via options in both `summarize.ts` and `openrouter.ts` for testability without network calls.
 - `pnpm release` automates the prepared npm release workflow: clean-worktree check, verification, tag, push, publish, and GitHub release creation. It supports `--dry-run` and optional npm OTP input.
 - GitHub Actions can publish to npm on `release.published` after verifying the release tag matches `package.json` and rerunning the full verification suite in CI. npm publishing uses trusted publishing rather than an npm token.
+- The GitHub publish workflow upgrades npm to a current release before publish because npm trusted publishing requires npm CLI `11.5.1+`.
 - `pnpm set-github-secrets` uploads `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API` to the GitHub repository with `gh secret set`.
 
 **Module responsibilities:**

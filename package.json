@@ -1,6 +1,6 @@
 {
   "name": "readwise-summarize",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI tools for fetching Readwise Reader content and generating AI summaries",
   "type": "module",
   "bin": {

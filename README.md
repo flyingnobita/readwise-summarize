@@ -129,6 +129,8 @@ gh release create vX.Y.Z --verify-tag --title "vX.Y.Z" --generate-notes
 
 Publishing a GitHub release for the matching tag triggers the automated npm publish workflow.
 
+The GitHub publish workflow upgrades npm before publishing because npm trusted publishing currently requires npm CLI `11.5.1+`.
+
 To configure the required GitHub Actions secrets from your machine:
 
 ```bash
