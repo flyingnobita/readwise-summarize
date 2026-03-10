@@ -95,6 +95,9 @@ Typical flow:
 # 2. Preview the release plan
 pnpm release --dry-run
 
+# Optional: preview the generated release notes
+pnpm release-notes
+
 # 3. Run the release
 pnpm release --otp 123456
 ```
@@ -106,6 +109,7 @@ Useful flags:
 - `pnpm release --skip-publish`
 - `pnpm release --skip-github-release`
 - `pnpm release --skip-push`
+- `pnpm release-notes`
 
 ### Option 2: GitHub release publish
 

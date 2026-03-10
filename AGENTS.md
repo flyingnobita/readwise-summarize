@@ -20,6 +20,9 @@ pnpm openrouter-rank-free [options]
 # Run the prepared release workflow
 pnpm release [version] [options]
 
+# Generate changelog-driven release notes
+pnpm release-notes [version]
+
 # Upload required GitHub Actions secrets for release automation
 pnpm set-github-secrets
 
@@ -67,6 +70,8 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `summarize --output-dir <dir>` writes `summaries-YYYY-MM-DD.json` atomically (write temp → rename); falls back to stdout if omitted.
 - `fetchImpl` is injected via options in both `summarize.ts` and `openrouter.ts` for testability without network calls.
 - `pnpm release` automates the prepared npm release workflow: clean-worktree check, verification, tag, push, publish, and GitHub release creation. It supports `--dry-run` and optional npm OTP input.
+- `pnpm release-notes` generates user-facing Markdown release notes from the `CHANGELOG.md` entry window for a release.
+- `CHANGELOG.md` release entries must use `Release X.Y.Z: summary` bullets, and any supporting detail bullets for that release must appear immediately below that release marker before the next `Release ...` entry so `pnpm release-notes` can group them correctly.
 - GitHub Actions can publish to npm on `release.published` after verifying the release tag matches `package.json` and rerunning the full verification suite in CI. npm publishing uses trusted publishing rather than an npm token.
 - The GitHub publish workflow upgrades npm to a current release before publish because npm trusted publishing requires npm CLI `11.5.1+`.
 - `pnpm set-github-secrets` uploads `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API` to the GitHub repository with `gh secret set`.
@@ -81,11 +86,13 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `src/lib/parse-date.ts` — `parseDate` (chrono-node + ISO 8601 fallback)
 - `src/lib/openrouter.ts` — `fetchFreeModels`, `filterModels`, `testModel`, `buildSelection`, `refreshFreeModels`, `mapWithConcurrency`, `inferParamBFromIdOrName`
 - `src/lib/release.ts` — release version validation and release command plan generation
+- `src/lib/release-notes.ts` — parses `CHANGELOG.md` release windows and renders Markdown release notes
 - `src/lib/summarize.ts` — `summarizeDocument`, `summarizeDocuments` (uses `mapWithConcurrency`)
 - `.github/workflows/publish-npm.yml` — publish workflow triggered by GitHub release publication; verifies tag/version alignment, runs verification, then publishes to npm
 - `scripts/set-github-secrets.sh` — helper for uploading the GitHub Actions secrets required by integration-test-gated release publishing
 - `src/reader-fetch.ts` — CLI wiring via `commander`, reads `READWISE_TOKEN` from env, writes dated JSON envelope file
 - `src/release.ts` — CLI: automates the prepared npm release workflow with dry-run and step-skipping flags
+- `src/release-notes.ts` — CLI: prints changelog-driven Markdown release notes for a release version
 - `src/summarize.ts` — CLI: reads file arg or stdin JSON, validates envelope, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` user-config update
 - `src/openrouter-rank-free.ts` — CLI: calls `refreshFreeModels`, outputs ranked JSON
 
@@ -107,7 +114,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 **All code changes must also update documentation.** This is a hard requirement:
 - `README.md` — update affected CLI options tables, examples, and output format sections
 - `AGENTS.md` — update architecture, key design decisions, and module responsibilities as needed
-- `CHANGELOG.md` — add an entry for every meaningful change
+- `CHANGELOG.md` — add an entry for every meaningful change; release notes depend on `Release X.Y.Z: summary` bullets with any release-specific detail entries placed directly below that marker before the next release entry
 
 ## Environment
 

@@ -1,5 +1,7 @@
 # Changelog
 
+- Mar-10, 2026 - 05:20 PM SGT - Document the required `CHANGELOG.md` release-entry format in `AGENTS.md` so `pnpm release-notes` can group release summaries and detail bullets correctly
+- Mar-10, 2026 - 05:14 PM SGT - Add changelog-driven `pnpm release-notes` generator with tests and docs for user-facing GitHub release notes
 - Mar-10, 2026 - 05:10 PM SGT - Release 1.0.3: retry GitHub-trusted npm publishing from the corrected 1.0.2 code state after the mis-tagged 1.0.2 release
 - Mar-10, 2026 - 05:03 PM SGT - Release 1.0.2: upgrade npm in GitHub trusted-publishing workflow to satisfy npm trusted-publishing requirements and unblock CI-based npm publish
 - Mar-10, 2026 - 05:00 PM SGT - Fix GitHub trusted-publishing workflow to upgrade npm before publish because npm trusted publishing requires npm CLI 11.5.1 or later
