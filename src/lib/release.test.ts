@@ -79,6 +79,7 @@ describe("buildReleasePlan", () => {
       skipPush: false,
       skipPublish: false,
       skipGithubRelease: false,
+      githubReleaseNotesFile: "/tmp/release-notes-v1.2.3.md",
     });
 
     expect(plan.map((step) => step.command)).toEqual([
@@ -99,7 +100,8 @@ describe("buildReleasePlan", () => {
       "--verify-tag",
       "--title",
       "v1.2.3",
-      "--generate-notes",
+      "--notes-file",
+      "/tmp/release-notes-v1.2.3.md",
     ]);
   });
 

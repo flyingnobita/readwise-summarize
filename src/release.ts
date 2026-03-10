@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
+import { tmpdir } from "os";
 import { spawnSync } from "child_process";
 import { Command } from "commander";
 import {
@@ -9,6 +10,7 @@ import {
   buildReleasePlan,
   releaseTag,
 } from "./lib/release.js";
+import { buildReleaseNotes } from "./lib/release-notes.js";
 
 function runCommand(command: string, args: string[], cwd: string): string {
   const result = spawnSync(command, args, {
@@ -53,6 +55,34 @@ function ensureTagDoesNotExist(cwd: string, tag: string): void {
   }
 }
 
+function buildReleaseNotesPreviewPath(version: string): string {
+  return join(tmpdir(), `readwise-summarize-${releaseTag(version)}-notes.md`);
+}
+
+function writeGithubReleaseNotesFile(
+  cwd: string,
+  packageName: string,
+  version: string
+): { file: string; cleanup: () => void } {
+  const changelogPath = join(cwd, "CHANGELOG.md");
+  if (!existsSync(changelogPath)) {
+    throw new Error("CHANGELOG.md not found in current directory.");
+  }
+
+  const changelog = readFileSync(changelogPath, "utf-8");
+  const notes = buildReleaseNotes(changelog, version, packageName);
+  const dir = mkdtempSync(join(tmpdir(), "readwise-summarize-release-notes-"));
+  const file = join(dir, `${releaseTag(version)}.md`);
+  writeFileSync(file, notes.markdown, "utf-8");
+
+  return {
+    file,
+    cleanup: () => {
+      rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+
 async function main(): Promise<void> {
   const program = new Command();
 
@@ -79,10 +109,15 @@ async function main(): Promise<void> {
   }
 
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as {
+    name?: string;
     version?: string;
   };
   if (!packageJson.version) {
     process.stderr.write("Error: package.json is missing version.\n");
+    process.exit(1);
+  }
+  if (!packageJson.name) {
+    process.stderr.write("Error: package.json is missing name.\n");
     process.exit(1);
   }
 
@@ -105,6 +140,9 @@ async function main(): Promise<void> {
   ensureCleanWorktree(cwd);
   ensureTagDoesNotExist(cwd, tag);
 
+  const githubReleaseNotesFile =
+    opts.skipGithubRelease === true ? undefined : buildReleaseNotesPreviewPath(version);
+
   const plan = buildReleasePlan({
     version,
     remote: opts.remote,
@@ -116,6 +154,7 @@ async function main(): Promise<void> {
     skipPush: opts.skipPush ?? false,
     skipPublish: opts.skipPublish ?? false,
     skipGithubRelease: opts.skipGithubRelease ?? false,
+    githubReleaseNotesFile,
     otp: opts.otp,
   });
 
@@ -129,9 +168,24 @@ async function main(): Promise<void> {
     return;
   }
 
-  for (const step of plan) {
-    process.stderr.write(`${step.description}...\n`);
-    runInteractive(step.command, step.args, cwd);
+  const notesArtifact =
+    opts.skipGithubRelease === true
+      ? undefined
+      : writeGithubReleaseNotesFile(cwd, packageJson.name, version);
+
+  try {
+    for (const step of plan) {
+      process.stderr.write(`${step.description}...\n`);
+      const args =
+        step.command === "gh" && notesArtifact
+          ? step.args.map((arg) =>
+              arg === githubReleaseNotesFile ? notesArtifact.file : arg
+            )
+          : step.args;
+      runInteractive(step.command, args, cwd);
+    }
+  } finally {
+    notesArtifact?.cleanup();
   }
 }
 

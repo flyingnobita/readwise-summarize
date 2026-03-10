@@ -102,6 +102,8 @@ pnpm release-notes
 pnpm release --otp 123456
 ```
 
+`pnpm release` uses the generated `pnpm release-notes` output for the GitHub release body automatically.
+
 Useful flags:
 
 - `pnpm release --dry-run`
@@ -128,7 +130,8 @@ git push origin master
 git push origin vX.Y.Z
 
 # 3. Publish the GitHub release for that tag
-gh release create vX.Y.Z --verify-tag --title "vX.Y.Z" --generate-notes
+pnpm release-notes X.Y.Z > /tmp/readwise-summarize-vX.Y.Z-notes.md
+gh release create vX.Y.Z --verify-tag --title "vX.Y.Z" --notes-file /tmp/readwise-summarize-vX.Y.Z-notes.md
 ```
 
 Publishing a GitHub release for the matching tag triggers the automated npm publish workflow.

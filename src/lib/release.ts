@@ -9,6 +9,7 @@ export interface ReleaseConfig {
   skipPush: boolean;
   skipPublish: boolean;
   skipGithubRelease: boolean;
+  githubReleaseNotesFile?: string;
   otp?: string;
 }
 
@@ -138,7 +139,17 @@ export function buildReleasePlan(config: ReleaseConfig): ReleaseCommand[] {
     commands.push({
       description: `Create GitHub release ${tag}`,
       command: "gh",
-      args: ["release", "create", tag, "--verify-tag", "--title", tag, "--generate-notes"],
+      args: [
+        "release",
+        "create",
+        tag,
+        "--verify-tag",
+        "--title",
+        tag,
+        ...(config.githubReleaseNotesFile
+          ? ["--notes-file", config.githubReleaseNotesFile]
+          : ["--generate-notes"]),
+      ],
     });
   }
 

@@ -28,10 +28,20 @@ beforeEach(() => {
     JSON.stringify({ name: "release-test", version: "1.2.3" }, null, 2),
     "utf-8"
   );
+  writeFileSync(
+    join(tmpRepo, "CHANGELOG.md"),
+    `# Changelog
+
+- Mar-10, 2026 - 05:29 PM SGT - Release 1.2.3: test release notes wiring
+- Mar-10, 2026 - 05:28 PM SGT - Add release plan coverage for notes files
+- Mar-10, 2026 - 05:27 PM SGT - Release 1.2.2: older release
+`,
+    "utf-8"
+  );
   spawnSync("git", ["init", "-b", "main"], { cwd: tmpRepo, encoding: "utf-8" });
   spawnSync("git", ["config", "user.name", "Test User"], { cwd: tmpRepo, encoding: "utf-8" });
   spawnSync("git", ["config", "user.email", "test@example.com"], { cwd: tmpRepo, encoding: "utf-8" });
-  spawnSync("git", ["add", "package.json"], { cwd: tmpRepo, encoding: "utf-8" });
+  spawnSync("git", ["add", "package.json", "CHANGELOG.md"], { cwd: tmpRepo, encoding: "utf-8" });
   spawnSync("git", ["commit", "-m", "chore: init"], { cwd: tmpRepo, encoding: "utf-8" });
 });
 
@@ -43,12 +53,13 @@ afterEach(() => {
 
 describe("release CLI", () => {
   it("prints the planned release commands in dry-run mode", () => {
-    const result = run(["--dry-run", "--skip-publish", "--skip-github-release", "--skip-push"]);
+    const result = run(["--dry-run", "--skip-publish", "--skip-push"]);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("Release version: 1.2.3");
     expect(result.stdout).toContain("Tag: v1.2.3");
     expect(result.stdout).toContain("pnpm test");
     expect(result.stdout).toContain("git tag -a v1.2.3 -m v1.2.3");
+    expect(result.stdout).toContain("gh release create v1.2.3 --verify-tag --title v1.2.3 --notes-file ");
   });
 
   it("fails when the provided version does not match package.json", () => {

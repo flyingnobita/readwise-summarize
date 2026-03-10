@@ -71,6 +71,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `fetchImpl` is injected via options in both `summarize.ts` and `openrouter.ts` for testability without network calls.
 - `pnpm release` automates the prepared npm release workflow: clean-worktree check, verification, tag, push, publish, and GitHub release creation. It supports `--dry-run` and optional npm OTP input.
 - `pnpm release-notes` generates user-facing Markdown release notes from the `CHANGELOG.md` entry window for a release.
+- `pnpm release` uses the generated `pnpm release-notes` output as the GitHub release body instead of relying on GitHub auto-generated notes.
 - `CHANGELOG.md` release entries must use `Release X.Y.Z: summary` bullets, and any supporting detail bullets for that release must appear immediately below that release marker before the next `Release ...` entry so `pnpm release-notes` can group them correctly.
 - GitHub Actions can publish to npm on `release.published` after verifying the release tag matches `package.json` and rerunning the full verification suite in CI. npm publishing uses trusted publishing rather than an npm token.
 - The GitHub publish workflow upgrades npm to a current release before publish because npm trusted publishing requires npm CLI `11.5.1+`.
