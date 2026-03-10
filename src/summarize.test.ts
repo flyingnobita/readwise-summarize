@@ -41,7 +41,11 @@ function run(args: string[], stdinInput?: string) {
     cwd: root,
     input: stdinInput,
     encoding: "utf-8",
-    env: { ...process.env, OPEN_ROUTER_SUMMARIZE_API: "test-key" },
+    env: {
+      ...process.env,
+      OPEN_ROUTER_SUMMARIZE_API: "test-key",
+      READWISE_SUMMARIZE_CONFIG_DIR: join(tmpDir, "config"),
+    },
   });
 }
 

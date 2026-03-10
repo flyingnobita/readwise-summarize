@@ -1,7 +1,8 @@
 import { readFileSync } from "fs";
-import { parse } from "smol-toml";
+import { parse, stringify } from "smol-toml";
 import { fileURLToPath } from "url";
 import { join, dirname } from "path";
+import { getUserConfigPath, readOptionalTextFile } from "./app.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const configPath = join(__dirname, "../../config.toml");
@@ -64,6 +65,59 @@ export function validateConfig(raw: unknown): asserts raw is Config {
   }
 }
 
-const raw = parse(readFileSync(configPath, "utf-8"));
-validateConfig(raw);
+function mergeConfig(
+  base: Record<string, unknown>,
+  override: Record<string, unknown>
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const current = merged[key];
+    if (
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      current &&
+      typeof current === "object" &&
+      !Array.isArray(current)
+    ) {
+      merged[key] = mergeConfig(
+        current as Record<string, unknown>,
+        value as Record<string, unknown>
+      );
+      continue;
+    }
+    merged[key] = value;
+  }
+  return merged;
+}
+
+export function loadConfig(
+  defaultsToml: string,
+  userToml?: string | null
+): Config {
+  const defaults = parse(defaultsToml) as Record<string, unknown>;
+  const merged = userToml
+    ? mergeConfig(defaults, parse(userToml) as Record<string, unknown>)
+    : defaults;
+  validateConfig(merged);
+  return merged;
+}
+
+export function updateUserConfigToml(
+  userToml: string | null | undefined,
+  modelId: string
+): string {
+  const parsed = userToml && userToml.trim()
+    ? parse(userToml) as Record<string, unknown>
+    : {};
+  const summarizeSection = (parsed["summarize"] ?? {}) as Record<string, unknown>;
+  summarizeSection["model"] = modelId;
+  parsed["summarize"] = summarizeSection;
+  return stringify(parsed);
+}
+
+const raw = loadConfig(
+  readFileSync(configPath, "utf-8"),
+  readOptionalTextFile(getUserConfigPath())
+);
 export const config: Config = raw;

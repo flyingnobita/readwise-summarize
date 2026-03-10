@@ -1,5 +1,6 @@
 # Changelog
 
+- Mar-10, 2026 - 02:36 PM SGT - Harden package release hygiene: align package identity and MIT licensing, move mutable summarize model config to a user-writable config file, and fix summarize output docs to match runtime fields
 - Mar-05, 2026 - 10:55 PM SGT - Add --verbose flag to reader-fetch; all progress output is now gated behind it, consistent with summarize
 - Mar-05, 2026 - 10:35 PM SGT - Add --prefix flag to both reader-fetch and summarize to customize output filename prefix; defaults to "articles" and "summaries" respectively
 - Mar-05, 2026 - 10:20 PM SGT - Add --output-dir flag to summarize; writes summaries-YYYY-MM-DD.json atomically alongside reader-fetch's articles file

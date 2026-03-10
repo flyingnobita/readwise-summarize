@@ -1,3 +1,5 @@
+import { APP_NAME, APP_REPOSITORY } from "./app.js";
+
 export interface OpenRouterModel {
   id: string;
   name: string;
@@ -181,8 +183,8 @@ export async function testModel(
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://github.com/flyingnobita/daily-brief",
-          "X-Title": "daily-brief",
+          "HTTP-Referer": APP_REPOSITORY,
+          "X-Title": APP_NAME,
         },
         body,
         signal: controller.signal,

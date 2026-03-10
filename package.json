@@ -1,7 +1,7 @@
 {
-  "name": "daily-brief",
+  "name": "readwise-summarize",
   "version": "1.0.0",
-  "description": "CLI tools for daily-brief pipeline",
+  "description": "CLI tools for fetching Readwise Reader content and generating AI summaries",
   "type": "module",
   "bin": {
     "reader-fetch": "./dist/reader-fetch.js",
@@ -26,9 +26,28 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --reporter=verbose --config vitest.integration.config.ts"
   },
-  "keywords": [],
+  "keywords": [
+    "readwise",
+    "openrouter",
+    "cli",
+    "summarization"
+  ],
   "author": "flyingnobita",
-  "license": "ISC",
+  "license": "MIT",
+  "homepage": "https://github.com/flyingnobita/readwise-summarize#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flyingnobita/readwise-summarize.git"
+  },
+  "bugs": {
+    "url": "https://github.com/flyingnobita/readwise-summarize/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "packageManager": "pnpm@10.30.3",
   "dependencies": {
     "chrono-node": "^2.9.0",

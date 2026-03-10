@@ -5,8 +5,8 @@ import dotenv from "dotenv";
 import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync } from "fs";
 import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
-import { parse, stringify } from "smol-toml";
-import { config } from "./lib/config.js";
+import { config, updateUserConfigToml } from "./lib/config.js";
+import { getUserConfigPath, writeAtomicFile } from "./lib/app.js";
 import { refreshFreeModels } from "./lib/openrouter.js";
 import { summarizeDocuments } from "./lib/summarize.js";
 import type { OutputDocument } from "./lib/types.js";
@@ -14,7 +14,6 @@ import type { OutputDocument } from "./lib/types.js";
 dotenv.config({ quiet: true });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const configPath = join(__dirname, "../config.toml");
 const instructions = readFileSync(join(__dirname, "../config_prompt.md"), "utf-8").trim();
 
 function parsePositiveInt(value: string, flag: string): number {
@@ -118,17 +117,12 @@ async function main(): Promise<void> {
     const topModel = ranked[0].modelId;
     log(`Top free model: ${topModel}`);
 
-    // Update config.toml atomically
-    const raw = readFileSync(configPath, "utf-8");
-    const parsed = parse(raw) as Record<string, unknown>;
-    const summarizeSection = (parsed["summarize"] ?? {}) as Record<string, unknown>;
-    summarizeSection["model"] = topModel;
-    parsed["summarize"] = summarizeSection;
-    const updated = stringify(parsed);
-    const tmpPath = configPath + ".tmp";
-    writeFileSync(tmpPath, updated, "utf-8");
-    renameSync(tmpPath, configPath);
-    log(`Updated config.toml: summarize.model = "${topModel}"`);
+    const userConfigPath = getUserConfigPath();
+    const raw = existsSync(userConfigPath) ? readFileSync(userConfigPath, "utf-8") : "";
+    const updated = updateUserConfigToml(raw, topModel);
+    writeAtomicFile(userConfigPath, updated);
+    log(`Updated user config: ${userConfigPath}`);
+    log(`summarize.model = "${topModel}"`);
 
     modelId = topModel;
   }

@@ -51,11 +51,11 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `tags` in `ReaderDocument` is `Record<string, { name: string }>` (Readwise API shape); `transformDocument` flattens it to `string[]`.
 - `published_date` from the API is a Unix timestamp in milliseconds; `transformDocument` converts it to ISO 8601.
 - `buildFields` in `transform.ts` auto-appends `html_content` to the field list when `--with-content` is passed.
-- `link` in `SummarizedDocument` is `source_url ?? url` (source_url is the original article URL; url is the Readwise Reader URL).
+- `SummarizedDocument` exposes `readwise` for the Readwise Reader URL and `source_url` only when the item came from a library/feed location and an original source URL is available.
 - Pagination uses a cursor (`pageCursor` param) with a 3-second delay between pages.
 - Date parsing uses `chrono-node` for natural language with ISO 8601 as fallback.
 - LLM prompt and model parameters (system_prompt, user_prompt_template, temperature, max_tokens) are fully configurable in `config.toml`.
-- `--scan-free` probes live OpenRouter free models and atomically updates `config.toml` with the top result (write temp → rename).
+- `config.toml` bundled with the package is the default config. User overrides are loaded from a writable per-user config file, and `--scan-free` updates only that user config file atomically.
 - `reader-fetch` writes output atomically: writes to `articles-YYYY-MM-DD.json.tmp` then renames to `articles-YYYY-MM-DD.json`. The JSON envelope wraps the documents array with `complete: true`, `count`, and `generated_at` metadata. `summarize` validates `complete === true` before processing.
 - `summarize` accepts an optional positional file argument; falls back to stdin for legacy pipe usage. Stdin accepts either the envelope format or a bare JSON array.
 - `summarize --output-dir <dir>` writes `summaries-YYYY-MM-DD.json` atomically (write temp → rename); falls back to stdout if omitted.
@@ -64,14 +64,15 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 **Module responsibilities:**
 
 - `src/lib/types.ts` — `ReaderDocument` (raw API shape), `OutputDocument` (transformed)
-- `src/lib/config.ts` — loads and exports typed `config` from `config.toml` via `smol-toml`
+- `src/lib/app.ts` — package identity constants and writable user-config path helpers
+- `src/lib/config.ts` — loads typed config by merging bundled `config.toml` with optional user overrides via `smol-toml`
 - `src/lib/api.ts` — `fetchPage`, `fetchAllDocuments` (pagination loop with cursor + delay)
 - `src/lib/transform.ts` — `buildFields`, `transformDocument`, `filterByPublishedSince`, `filterByAuthor`
 - `src/lib/parse-date.ts` — `parseDate` (chrono-node + ISO 8601 fallback)
 - `src/lib/openrouter.ts` — `fetchFreeModels`, `filterModels`, `testModel`, `buildSelection`, `refreshFreeModels`, `mapWithConcurrency`, `inferParamBFromIdOrName`
 - `src/lib/summarize.ts` — `summarizeDocument`, `summarizeDocuments` (uses `mapWithConcurrency`)
 - `src/reader-fetch.ts` — CLI wiring via `commander`, reads `READWISE_TOKEN` from env, writes dated JSON envelope file
-- `src/summarize.ts` — CLI: reads file arg or stdin JSON, validates envelope, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` config update
+- `src/summarize.ts` — CLI: reads file arg or stdin JSON, validates envelope, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` user-config update
 - `src/openrouter-rank-free.ts` — CLI: calls `refreshFreeModels`, outputs ranked JSON
 
 ## Testing

@@ -1,4 +1,5 @@
 import { mapWithConcurrency } from "./openrouter.js";
+import { APP_NAME, APP_REPOSITORY } from "./app.js";
 import type { OutputDocument } from "./types.js";
 
 /**
@@ -91,8 +92,8 @@ export async function summarizeDocument(
       headers: {
         Authorization: `Bearer ${opts.apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/flyingnobita/daily-brief",
-        "X-Title": "daily-brief",
+        "HTTP-Referer": APP_REPOSITORY,
+        "X-Title": APP_NAME,
       },
       body: JSON.stringify({
         model: opts.modelId,

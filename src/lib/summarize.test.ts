@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { APP_NAME, APP_REPOSITORY } from "./app.js";
 import { summarizeDocument, summarizeDocuments, compactMarkdown } from "./summarize.js";
 import type { SummarizeOptions } from "./summarize.js";
 import type { OutputDocument } from "./types.js";
@@ -109,10 +110,8 @@ describe("summarizeDocument", () => {
     expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
     expect((init.headers as Record<string, string>)["Authorization"]).toBe("Bearer test-key");
     expect((init.headers as Record<string, string>)["Content-Type"]).toBe("application/json");
-    expect((init.headers as Record<string, string>)["HTTP-Referer"]).toBe(
-      "https://github.com/flyingnobita/daily-brief"
-    );
-    expect((init.headers as Record<string, string>)["X-Title"]).toBe("daily-brief");
+    expect((init.headers as Record<string, string>)["HTTP-Referer"]).toBe(APP_REPOSITORY);
+    expect((init.headers as Record<string, string>)["X-Title"]).toBe(APP_NAME);
 
     const body = JSON.parse(init.body as string);
     expect(body.model).toBe("test/model:free");

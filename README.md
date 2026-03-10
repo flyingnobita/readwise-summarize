@@ -1,4 +1,4 @@
-# daily-brief
+# readwise-summarize
 
 CLI tools for fetching content from Readwise Reader and generating AI-powered article summaries via OpenRouter.
 
@@ -205,6 +205,13 @@ user_prompt_template = "Title: {title}\nAuthor: {author}\n\n{html_content}"
 
 The `user_prompt_template` supports `{title}`, `{author}`, `{url}`, and `{html_content}` placeholders.
 
+User overrides are loaded from a writable per-user config file instead of modifying the packaged `config.toml`.
+
+- macOS: `~/Library/Application Support/readwise-summarize/config.toml`
+- Linux: `$XDG_CONFIG_HOME/readwise-summarize/config.toml` or `~/.config/readwise-summarize/config.toml`
+- Windows: `%APPDATA%\\readwise-summarize\\config.toml`
+- Override location for tests or automation: `READWISE_SUMMARIZE_CONFIG_DIR`
+
 ### Examples
 
 ```bash
@@ -230,7 +237,8 @@ pnpm summarize articles-2026-03-05.json --with-original
     "title": "Article Title",
     "author": "Author Name",
     "site_name": "Site Name",
-    "link": "https://original-site.com/article",
+    "readwise": "https://read.readwise.io/read/...",
+    "source_url": "https://original-site.com/article",
     "ai_summary": "AI-generated summary of the article.",
     "original_summary": "Original Readwise summary (only with --with-original)."
   }
