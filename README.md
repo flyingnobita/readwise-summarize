@@ -1,5 +1,7 @@
 # 📚 readwise-summarize
 
+![readwise-summarize banner](https://raw.githubusercontent.com/flyingnobita/readwise-summarize/main/assets/readwise-summarize-banner.jpeg)
+
 [![npm version](https://img.shields.io/npm/v/readwise-summarize)](https://www.npmjs.com/package/readwise-summarize)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Publish npm](https://github.com/flyingnobita/readwise-summarize/actions/workflows/publish-npm.yml/badge.svg)](https://github.com/flyingnobita/readwise-summarize/actions/workflows/publish-npm.yml)
