@@ -1,3 +1,6 @@
 [tools]
 node = "22"
 pnpm = "latest"
+
+[tasks.release]
+run = "pnpm release"

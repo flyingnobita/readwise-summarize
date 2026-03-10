@@ -1,5 +1,7 @@
 # Changelog
 
+- Mar-10, 2026 - 03:34 PM SGT - Clarify required runtime credentials in `.env.example` with explicit comments for Readwise and OpenRouter setup
+- Mar-10, 2026 - 03:26 PM SGT - Add `pnpm release` automation for prepared npm releases with clean-worktree checks, verification, tag/push, npm publish, GitHub release creation, and dry-run support
 - Mar-10, 2026 - 02:36 PM SGT - Harden package release hygiene: align package identity and MIT licensing, move mutable summarize model config to a user-writable config file, and fix summarize output docs to match runtime fields
 - Mar-05, 2026 - 10:55 PM SGT - Add --verbose flag to reader-fetch; all progress output is now gated behind it, consistent with summarize
 - Mar-05, 2026 - 10:35 PM SGT - Add --prefix flag to both reader-fetch and summarize to customize output filename prefix; defaults to "articles" and "summaries" respectively

@@ -43,6 +43,30 @@ To create a distributable tarball (still local):
 pnpm pack
 ```
 
+## Release Automation
+
+Prepared releases can be automated with the repo-local release command:
+
+```bash
+pnpm release
+```
+
+The release command assumes you have already updated `package.json`, `CHANGELOG.md`, and committed your changes. It then:
+
+- verifies the git worktree is clean
+- runs `pnpm test`, `pnpm test:integration`, and `pnpm build`
+- creates and pushes the matching `vX.Y.Z` tag
+- publishes to npm
+- creates the GitHub release with generated notes
+
+Useful flags:
+
+- `pnpm release --dry-run`
+- `pnpm release --otp 123456`
+- `pnpm release --skip-publish`
+- `pnpm release --skip-github-release`
+- `pnpm release --skip-push`
+
 Add credentials to `.env`:
 
 ```

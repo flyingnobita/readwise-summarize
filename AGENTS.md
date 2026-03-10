@@ -17,6 +17,9 @@ pnpm --silent reader-fetch --with-content [options] | pnpm summarize [options]
 # Scan and rank free OpenRouter models
 pnpm openrouter-rank-free [options]
 
+# Run the prepared release workflow
+pnpm release [version] [options]
+
 # Type-check
 pnpm exec tsc --noEmit
 
@@ -60,6 +63,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `summarize` accepts an optional positional file argument; falls back to stdin for legacy pipe usage. Stdin accepts either the envelope format or a bare JSON array.
 - `summarize --output-dir <dir>` writes `summaries-YYYY-MM-DD.json` atomically (write temp → rename); falls back to stdout if omitted.
 - `fetchImpl` is injected via options in both `summarize.ts` and `openrouter.ts` for testability without network calls.
+- `pnpm release` automates the prepared npm release workflow: clean-worktree check, verification, tag, push, publish, and GitHub release creation. It supports `--dry-run` and optional npm OTP input.
 
 **Module responsibilities:**
 
@@ -70,8 +74,10 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `src/lib/transform.ts` — `buildFields`, `transformDocument`, `filterByPublishedSince`, `filterByAuthor`
 - `src/lib/parse-date.ts` — `parseDate` (chrono-node + ISO 8601 fallback)
 - `src/lib/openrouter.ts` — `fetchFreeModels`, `filterModels`, `testModel`, `buildSelection`, `refreshFreeModels`, `mapWithConcurrency`, `inferParamBFromIdOrName`
+- `src/lib/release.ts` — release version validation and release command plan generation
 - `src/lib/summarize.ts` — `summarizeDocument`, `summarizeDocuments` (uses `mapWithConcurrency`)
 - `src/reader-fetch.ts` — CLI wiring via `commander`, reads `READWISE_TOKEN` from env, writes dated JSON envelope file
+- `src/release.ts` — CLI: automates the prepared npm release workflow with dry-run and step-skipping flags
 - `src/summarize.ts` — CLI: reads file arg or stdin JSON, validates envelope, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` user-config update
 - `src/openrouter-rank-free.ts` — CLI: calls `refreshFreeModels`, outputs ranked JSON
 

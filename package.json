@@ -19,6 +19,7 @@
     "clean": "rm -rf dist",
     "build": "pnpm clean && tsc -p tsconfig.build.json",
     "prepack": "pnpm build",
+    "release": "tsx src/release.ts",
     "reader-fetch": "tsx src/reader-fetch.ts",
     "openrouter-rank-free": "tsx src/openrouter-rank-free.ts",
     "summarize": "tsx src/summarize.ts",
