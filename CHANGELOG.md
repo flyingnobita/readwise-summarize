@@ -1,5 +1,8 @@
 # Changelog
 
+- Mar-10, 2026 - 04:15 PM SGT - Reorganize README for both npm users and contributors: move credential setup into configuration, align config defaults, and refresh project structure docs
+- Mar-10, 2026 - 04:01 PM SGT - Switch GitHub Actions npm publishing docs and workflow to trusted-publishing-only; remove `NPM_TOKEN` dependency from CI
+- Mar-10, 2026 - 03:45 PM SGT - Add GitHub Actions npm publish automation on GitHub release publication with tag/version verification and CI verification gates
 - Mar-10, 2026 - 03:34 PM SGT - Clarify required runtime credentials in `.env.example` with explicit comments for Readwise and OpenRouter setup
 - Mar-10, 2026 - 03:26 PM SGT - Add `pnpm release` automation for prepared npm releases with clean-worktree checks, verification, tag/push, npm publish, GitHub release creation, and dry-run support
 - Mar-10, 2026 - 02:36 PM SGT - Harden package release hygiene: align package identity and MIT licensing, move mutable summarize model config to a user-writable config file, and fix summarize output docs to match runtime fields

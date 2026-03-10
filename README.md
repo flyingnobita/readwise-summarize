@@ -15,6 +15,35 @@ CLI tools for fetching content from Readwise Reader and generating AI-powered ar
 pnpm install
 ```
 
+## Install From npm
+
+Install the published CLI globally from npm:
+
+```bash
+npm install -g readwise-summarize
+```
+
+This installs these commands on your machine:
+
+- `reader-fetch`
+- `summarize`
+- `openrouter-rank-free`
+
+## Configuration
+
+Add credentials to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+```dotenv
+READWISE_TOKEN=your_token_here
+OPEN_ROUTER_SUMMARIZE_API=your_key_here
+```
+
+Get your Readwise token at [readwise.io/access_token](https://readwise.io/access_token).
+
 ## Package As CLI (Local Only)
 
 Build and expose commands locally without publishing:
@@ -45,19 +74,30 @@ pnpm pack
 
 ## Release Automation
 
-Prepared releases can be automated with the repo-local release command:
+This repo currently supports two release paths.
+
+### Option 1: Local release command
+
+Use the repo-local release command when publishing from your machine:
 
 ```bash
 pnpm release
 ```
 
-The release command assumes you have already updated `package.json`, `CHANGELOG.md`, and committed your changes. It then:
+Typical flow:
 
-- verifies the git worktree is clean
-- runs `pnpm test`, `pnpm test:integration`, and `pnpm build`
-- creates and pushes the matching `vX.Y.Z` tag
-- publishes to npm
-- creates the GitHub release with generated notes
+```bash
+# 1. Prepare the release
+# - update package.json version
+# - update CHANGELOG.md
+# - commit changes
+
+# 2. Preview the release plan
+pnpm release --dry-run
+
+# 3. Run the release
+pnpm release --otp 123456
+```
 
 Useful flags:
 
@@ -67,14 +107,27 @@ Useful flags:
 - `pnpm release --skip-github-release`
 - `pnpm release --skip-push`
 
-Add credentials to `.env`:
+### Option 2: GitHub release publish
 
-```
-READWISE_TOKEN=your_token_here
-OPEN_ROUTER_SUMMARIZE_API=your_key_here
+If GitHub trusted publishing is configured, publishing can also happen from GitHub:
+
+```bash
+# 1. Prepare the release
+# - update package.json version
+# - update CHANGELOG.md
+# - commit changes
+# - push branch
+
+# 2. Create and push the tag
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push origin master
+git push origin vX.Y.Z
+
+# 3. Publish the GitHub release for that tag
+gh release create vX.Y.Z --verify-tag --title "vX.Y.Z" --generate-notes
 ```
 
-Get your Readwise token at [readwise.io/access_token](https://readwise.io/access_token).
+Publishing a GitHub release for the matching tag triggers the automated npm publish workflow.
 
 ## Pipeline
 
@@ -219,9 +272,9 @@ Falls back to reading a JSON array from stdin if no file argument is given (lega
 ```toml
 [summarize]
 model = ""               # default model; overridden by --model or --scan-free
-max_tokens = 300
+max_tokens = 0
 timeout_ms = 30000
-concurrency = 3
+concurrency = 1
 temperature = 0.7
 system_prompt = "You are a concise article summarizer. Summarize the article in 3-5 sentences focusing on key insights and takeaways."
 user_prompt_template = "Title: {title}\nAuthor: {author}\n\n{html_content}"
@@ -322,7 +375,9 @@ pnpm test:integration
 src/
 ├── lib/
 │   ├── types.ts                  # Shared interfaces (ReaderDocument, OutputDocument)
+│   ├── app.ts                    # App identity and user-config path helpers
 │   ├── config.ts                 # config.toml loader
+│   ├── config.test.ts
 │   ├── api.ts                    # Readwise Reader API client (fetch + pagination)
 │   ├── api.test.ts
 │   ├── transform.ts              # Document transformation, filtering, field selection
@@ -331,12 +386,17 @@ src/
 │   ├── parse-date.test.ts
 │   ├── openrouter.ts             # OpenRouter model scanning, probing, ranking
 │   ├── openrouter.test.ts
+│   ├── release.ts                # Release plan validation and command generation
+│   ├── release.test.ts
 │   ├── summarize.ts              # LLM summarization logic
 │   └── summarize.test.ts
 ├── reader-fetch.ts               # CLI: fetch articles from Readwise Reader
+├── release.ts                    # CLI: prepared npm release workflow
+├── release.test.ts
 ├── summarize.ts                  # CLI: generate AI summaries via OpenRouter
 ├── openrouter-rank-free.ts       # CLI: scan and rank free OpenRouter models
 └── integration.test.ts           # Integration tests (live API credentials required)
+.github/workflows/publish-npm.yml # GitHub release -> npm publish workflow
 config.toml                       # All runtime configuration
 vitest.config.ts                  # Unit test config
 vitest.integration.config.ts      # Integration test config

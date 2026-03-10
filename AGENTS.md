@@ -64,6 +64,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `summarize --output-dir <dir>` writes `summaries-YYYY-MM-DD.json` atomically (write temp → rename); falls back to stdout if omitted.
 - `fetchImpl` is injected via options in both `summarize.ts` and `openrouter.ts` for testability without network calls.
 - `pnpm release` automates the prepared npm release workflow: clean-worktree check, verification, tag, push, publish, and GitHub release creation. It supports `--dry-run` and optional npm OTP input.
+- GitHub Actions can publish to npm on `release.published` after verifying the release tag matches `package.json` and rerunning the full verification suite in CI. npm publishing uses trusted publishing rather than an npm token.
 
 **Module responsibilities:**
 
@@ -76,6 +77,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `src/lib/openrouter.ts` — `fetchFreeModels`, `filterModels`, `testModel`, `buildSelection`, `refreshFreeModels`, `mapWithConcurrency`, `inferParamBFromIdOrName`
 - `src/lib/release.ts` — release version validation and release command plan generation
 - `src/lib/summarize.ts` — `summarizeDocument`, `summarizeDocuments` (uses `mapWithConcurrency`)
+- `.github/workflows/publish-npm.yml` — publish workflow triggered by GitHub release publication; verifies tag/version alignment, runs verification, then publishes to npm
 - `src/reader-fetch.ts` — CLI wiring via `commander`, reads `READWISE_TOKEN` from env, writes dated JSON envelope file
 - `src/release.ts` — CLI: automates the prepared npm release workflow with dry-run and step-skipping flags
 - `src/summarize.ts` — CLI: reads file arg or stdin JSON, validates envelope, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` user-config update

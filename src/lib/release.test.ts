@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   assertReleaseVersion,
+  assertTagMatchesPackageVersion,
   buildReleasePlan,
   isValidSemver,
+  parseReleaseTag,
   releaseTag,
 } from "./release.js";
 
@@ -26,6 +28,20 @@ describe("releaseTag", () => {
   });
 });
 
+describe("parseReleaseTag", () => {
+  it("extracts the version from a valid release tag", () => {
+    expect(parseReleaseTag("v1.2.3")).toBe("1.2.3");
+  });
+
+  it("rejects tags without the v prefix", () => {
+    expect(() => parseReleaseTag("1.2.3")).toThrow("must start with v");
+  });
+
+  it("rejects tags with invalid versions", () => {
+    expect(() => parseReleaseTag("v1.2")).toThrow("valid semver");
+  });
+});
+
 describe("assertReleaseVersion", () => {
   it("uses package version when no override is provided", () => {
     expect(assertReleaseVersion("1.2.3")).toBe("1.2.3");
@@ -37,6 +53,16 @@ describe("assertReleaseVersion", () => {
 
   it("rejects a mismatched override", () => {
     expect(() => assertReleaseVersion("1.2.3", "1.2.4")).toThrow("does not match");
+  });
+});
+
+describe("assertTagMatchesPackageVersion", () => {
+  it("accepts a matching version tag", () => {
+    expect(assertTagMatchesPackageVersion("1.2.3", "v1.2.3")).toBe("1.2.3");
+  });
+
+  it("rejects a mismatched version tag", () => {
+    expect(() => assertTagMatchesPackageVersion("1.2.3", "v1.2.4")).toThrow("does not match");
   });
 });
 

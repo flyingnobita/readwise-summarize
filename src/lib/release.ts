@@ -28,6 +28,19 @@ export function releaseTag(version: string): string {
   return `v${version}`;
 }
 
+export function parseReleaseTag(tag: string): string {
+  if (!tag.startsWith("v")) {
+    throw new Error(`release tag must start with v: ${tag}`);
+  }
+
+  const version = tag.slice(1);
+  if (!isValidSemver(version)) {
+    throw new Error(`release tag does not contain a valid semver: ${tag}`);
+  }
+
+  return version;
+}
+
 export function assertReleaseVersion(
   packageVersion: string,
   requestedVersion?: string
@@ -51,6 +64,14 @@ export function assertReleaseVersion(
   }
 
   return requestedVersion;
+}
+
+export function assertTagMatchesPackageVersion(
+  packageVersion: string,
+  tag: string
+): string {
+  const tagVersion = parseReleaseTag(tag);
+  return assertReleaseVersion(packageVersion, tagVersion);
 }
 
 export function buildReleasePlan(config: ReleaseConfig): ReleaseCommand[] {
