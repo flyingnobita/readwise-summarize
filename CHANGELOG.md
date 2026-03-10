@@ -1,5 +1,6 @@
 # Changelog
 
+- Mar-10, 2026 - 09:15 PM SGT - Rename the default Git branch from `master` to `main` and update README branch references
 - Mar-10, 2026 - 07:05 PM SGT - Prefix `README.md` section headings with emojis for a more expressive top-level presentation
 - Mar-10, 2026 - 06:48 PM SGT - Add npm version, MIT license, and publish-workflow badges to `README.md`
 - Mar-10, 2026 - 05:29 PM SGT - Wire `pnpm release` to publish GitHub releases with generated `pnpm release-notes` output instead of GitHub auto-generated notes

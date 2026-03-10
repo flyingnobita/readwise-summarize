@@ -1,6 +1,6 @@
 # 📚 readwise-summarize
 
-![readwise-summarize banner](https://raw.githubusercontent.com/flyingnobita/readwise-summarize/master/assets/readwise-summarize-banner.png)
+![readwise-summarize banner](https://raw.githubusercontent.com/flyingnobita/readwise-summarize/main/assets/readwise-summarize-banner.png)
 
 [![npm version](https://img.shields.io/npm/v/readwise-summarize)](https://www.npmjs.com/package/readwise-summarize)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -132,7 +132,7 @@ If GitHub trusted publishing is configured, publishing can also happen from GitH
 
 # 2. Create and push the tag
 git tag -a vX.Y.Z -m "vX.Y.Z"
-git push origin master
+git push origin main
 git push origin vX.Y.Z
 
 # 3. Publish the GitHub release for that tag
