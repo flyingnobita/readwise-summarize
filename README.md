@@ -1,4 +1,4 @@
-# readwise-summarize
+# 📚 readwise-summarize
 
 [![npm version](https://img.shields.io/npm/v/readwise-summarize)](https://www.npmjs.com/package/readwise-summarize)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -6,20 +6,20 @@
 
 CLI tools for fetching content from Readwise Reader and generating AI-powered article summaries via OpenRouter.
 
-## Prerequisites
+## ✅ Prerequisites
 
 - [Node.js](https://nodejs.org/) 22+
 - [pnpm](https://pnpm.io/)
 - A [Readwise Reader](https://readwise.io/read) account and API token
 - An [OpenRouter](https://openrouter.ai/) API key (required for `summarize` and `openrouter-rank-free`)
 
-## Setup
+## ⚙️ Setup
 
 ```bash
 pnpm install
 ```
 
-## Install From npm
+## 📦 Install From npm
 
 Install the published CLI globally from npm:
 
@@ -33,7 +33,7 @@ This installs these commands on your machine:
 - `summarize`
 - `openrouter-rank-free`
 
-## Configuration
+## 🔑 Configuration
 
 Add credentials to `.env`:
 
@@ -48,7 +48,7 @@ OPEN_ROUTER_SUMMARIZE_API=your_key_here
 
 Get your Readwise token at [readwise.io/access_token](https://readwise.io/access_token).
 
-## Package As CLI (Local Only)
+## 🧰 Package As CLI (Local Only)
 
 Build and expose commands locally without publishing:
 
@@ -76,11 +76,11 @@ To create a distributable tarball (still local):
 pnpm pack
 ```
 
-## Release Automation
+## 🚢 Release Automation
 
 This repo currently supports two release paths.
 
-### Option 1: Local release command
+### 🖥️ Option 1: Local release command
 
 Use the repo-local release command when publishing from your machine:
 
@@ -117,7 +117,7 @@ Useful flags:
 - `pnpm release --skip-push`
 - `pnpm release-notes`
 
-### Option 2: GitHub release publish
+### ☁️ Option 2: GitHub release publish
 
 If GitHub trusted publishing is configured, publishing can also happen from GitHub:
 
@@ -163,7 +163,7 @@ pnpm set-github-secrets
 
 The helper now prefers exported environment variables first and falls back to `.env` automatically.
 
-## Pipeline
+## 🔄 Pipeline
 
 The tools are designed for a two-step daily workflow: fetch first, summarize second.
 
@@ -185,7 +185,7 @@ pnpm --silent reader-fetch --category rss --limit 5 --with-content | pnpm summar
 
 ---
 
-## `reader-fetch`
+## 📥 `reader-fetch`
 
 Fetches articles from Readwise Reader and writes a dated JSON file to disk.
 
@@ -193,7 +193,7 @@ Fetches articles from Readwise Reader and writes a dated JSON file to disk.
 pnpm reader-fetch [options]
 ```
 
-### Options
+### ⚙️ Options
 
 **API-side** (sent to Readwise Reader):
 
@@ -220,7 +220,7 @@ pnpm reader-fetch [options]
 
 **Default output fields:** `id`, `title`, `author`, `site_name`, `url`, `source_url`, `summary`, `tags`, `published_date`, `category`
 
-### Examples
+### 💡 Examples
 
 ```bash
 # First 5 articles from your feed
