@@ -6,25 +6,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Fetch articles from Readwise Reader (writes articles-YYYY-MM-DD.json to cwd or --output-dir)
-pnpm reader-fetch [options]
+pnpm rws -- fetch [options]
 
-# Generate AI summaries from a reader-fetch output file (stdout or --output-dir)
-pnpm summarize <file> [options]
+# Generate AI summaries from an rws fetch output file (stdout or --output-dir)
+pnpm rws -- summarize <file> [options]
 
-# Legacy: pipe reader-fetch output directly to summarize
-pnpm --silent reader-fetch --with-content [options] | pnpm summarize [options]
+# Legacy: pipe fetch output directly to summarize
+pnpm --silent rws -- fetch --with-content [options] | pnpm rws -- summarize [options]
 
 # Scan and rank free OpenRouter models
-pnpm openrouter-rank-free [options]
+pnpm rws -- models rank-free [options]
 
 # Run the prepared release workflow
-pnpm release [version] [options]
+pnpm rws -- release [version] [options]
 
 # Generate changelog-driven release notes
-pnpm release-notes [version]
+pnpm rws -- release-notes [version]
 
 # Upload required GitHub Actions secrets for release automation
-pnpm set-github-secrets
+pnpm rws -- github-secrets set
 
 # Type-check
 pnpm exec tsc --noEmit
@@ -44,14 +44,14 @@ pnpm test:integration
 
 ## Architecture
 
-TypeScript CLI toolkit for fetching Readwise Reader articles and generating AI summaries via OpenRouter. Progress and errors go to stderr; `summarize` output goes to stdout as JSON.
+TypeScript CLI toolkit for fetching Readwise Reader articles and generating AI summaries via OpenRouter. The public CLI surface is unified under `rws`. Progress and errors go to stderr; `rws summarize` output goes to stdout as JSON.
 
 **Daily workflow:**
 
 ```
-reader-fetch.ts -> api.ts (fetch & paginate) -> transform.ts (filter & shape) -> articles-YYYY-MM-DD.json
-                                                                                          |
-summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API -> stdout
+rws fetch -> reader-fetch.ts -> api.ts (fetch & paginate) -> transform.ts (filter & shape) -> articles-YYYY-MM-DD.json
+                                                                                                             |
+rws summarize (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API -> stdout
 ```
 
 **Key design decisions:**
@@ -65,17 +65,18 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - Date parsing uses `chrono-node` for natural language with ISO 8601 as fallback.
 - LLM prompt and model parameters (system_prompt, user_prompt_template, temperature, max_tokens) are fully configurable in `config.toml`.
 - `config.toml` bundled with the package is the default config. User overrides are loaded from a writable per-user config file, and `--scan-free` updates only that user config file atomically.
-- `reader-fetch` writes output atomically: writes to `articles-YYYY-MM-DD.json.tmp` then renames to `articles-YYYY-MM-DD.json`. The JSON envelope wraps the documents array with `complete: true`, `count`, and `generated_at` metadata. `summarize` validates `complete === true` before processing.
-- `summarize` accepts an optional positional file argument; falls back to stdin for legacy pipe usage. Stdin accepts either the envelope format or a bare JSON array.
-- `summarize --output-dir <dir>` writes `summaries-YYYY-MM-DD.json` atomically (write temp → rename); falls back to stdout if omitted.
+- The installed npm binary is `rws`, and it owns the `fetch`, `summarize`, `models rank-free`, `release`, `release-notes`, and `github-secrets set` command surface.
+- `rws fetch` writes output atomically: writes to `articles-YYYY-MM-DD.json.tmp` then renames to `articles-YYYY-MM-DD.json`. The JSON envelope wraps the documents array with `complete: true`, `count`, and `generated_at` metadata. `rws summarize` validates `complete === true` before processing.
+- `rws summarize` accepts an optional positional file argument; falls back to stdin for legacy pipe usage. Stdin accepts either the envelope format or a bare JSON array.
+- `rws summarize --output-dir <dir>` writes `summaries-YYYY-MM-DD.json` atomically (write temp → rename); falls back to stdout if omitted.
 - `fetchImpl` is injected via options in both `summarize.ts` and `openrouter.ts` for testability without network calls.
-- `pnpm release` automates the prepared npm release workflow: clean-worktree check, verification, tag, push, publish, and GitHub release creation. It supports `--dry-run` and optional npm OTP input.
-- `pnpm release-notes` generates user-facing Markdown release notes from the `CHANGELOG.md` entry window for a release.
-- `pnpm release` uses the generated `pnpm release-notes` output as the GitHub release body instead of relying on GitHub auto-generated notes.
-- `CHANGELOG.md` release entries must use `Release X.Y.Z: summary` bullets, and any supporting detail bullets for that release must appear immediately below that release marker before the next `Release ...` entry so `pnpm release-notes` can group them correctly.
+- `pnpm rws -- release` automates the prepared npm release workflow: clean-worktree check, verification, tag, push, publish, and GitHub release creation. It supports `--dry-run` and optional npm OTP input.
+- `pnpm rws -- release-notes` generates user-facing Markdown release notes from the `CHANGELOG.md` entry window for a release.
+- `pnpm rws -- release` uses the generated `pnpm rws -- release-notes` output as the GitHub release body instead of relying on GitHub auto-generated notes.
+- `CHANGELOG.md` release entries must use `Release X.Y.Z: summary` bullets, and any supporting detail bullets for that release must appear immediately below that release marker before the next `Release ...` entry so `pnpm rws -- release-notes` can group them correctly.
 - GitHub Actions can publish to npm on `release.published` after verifying the release tag matches `package.json` and rerunning the full verification suite in CI. npm publishing uses trusted publishing rather than an npm token.
 - The GitHub publish workflow upgrades npm to a current release before publish because npm trusted publishing requires npm CLI `11.5.1+`.
-- `pnpm set-github-secrets` uploads `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API` to the GitHub repository with `gh secret set`.
+- `pnpm rws -- github-secrets set` shells out to `scripts/set-github-secrets.sh`, which uploads `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API` to the GitHub repository with `gh secret set`.
 
 **Module responsibilities:**
 
@@ -91,11 +92,13 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - `src/lib/summarize.ts` — `summarizeDocument`, `summarizeDocuments` (uses `mapWithConcurrency`)
 - `.github/workflows/publish-npm.yml` — publish workflow triggered by GitHub release publication; verifies tag/version alignment, runs verification, then publishes to npm
 - `scripts/set-github-secrets.sh` — helper for uploading the GitHub Actions secrets required by integration-test-gated release publishing
-- `src/reader-fetch.ts` — CLI wiring via `commander`, reads `READWISE_TOKEN` from env, writes dated JSON envelope file
-- `src/release.ts` — CLI: automates the prepared npm release workflow with dry-run and step-skipping flags
-- `src/release-notes.ts` — CLI: prints changelog-driven Markdown release notes for a release version
-- `src/summarize.ts` — CLI: reads file arg or stdin JSON, validates envelope, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` user-config update
-- `src/openrouter-rank-free.ts` — CLI: calls `refreshFreeModels`, outputs ranked JSON
+- `src/github-secrets-set.ts` — CLI subcommand: runs the GitHub secret upload helper
+- `src/openrouter-rank-free.ts` — CLI subcommand: calls `refreshFreeModels`, outputs ranked JSON
+- `src/reader-fetch.ts` — CLI subcommand: reads `READWISE_TOKEN` from env, writes dated JSON envelope file
+- `src/release-notes.ts` — CLI subcommand: prints changelog-driven Markdown release notes for a release version
+- `src/release.ts` — CLI subcommand: automates the prepared npm release workflow with dry-run and step-skipping flags
+- `src/rws.ts` — root CLI entrypoint that composes the unified command surface
+- `src/summarize.ts` — CLI subcommand: reads file arg or stdin JSON, validates envelope, calls `summarizeDocument`/`summarizeDocuments`, handles `--scan-free` user-config update
 
 ## Testing
 
@@ -104,7 +107,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 - Integration tests: `src/integration.test.ts` (run with `pnpm test:integration`, requires `READWISE_TOKEN` and `OPEN_ROUTER_SUMMARIZE_API`)
 - All lib functions use injected `fetchImpl` for mock-based testing; no network calls in unit tests
 
-**All code changes must include a build.** Run `pnpm build` after changes so the compiled `dist/` binaries stay in sync with source. The installed CLI commands (`reader-fetch`, `summarize`, `openrouter-rank-free`) run from `dist/` and will not reflect source changes until rebuilt.
+**All code changes must include a build.** Run `pnpm build` after changes so the compiled `dist/` binaries stay in sync with source. The installed CLI command (`rws`) runs from `dist/` and will not reflect source changes until rebuilt.
 
 **All code changes must be accompanied by tests.** This is a hard requirement:
 - New lib functions → unit tests in `src/lib/*.test.ts`
@@ -120,7 +123,7 @@ summarize.ts (file arg) -> summarize.ts (lib) -> OpenRouter chat/completions API
 ## Environment
 
 - Requires `READWISE_TOKEN` in `.env` (Readwise Reader API)
-- Requires `OPEN_ROUTER_SUMMARIZE_API` in `.env` (OpenRouter API, for `summarize` and `openrouter-rank-free`)
+- Requires `OPEN_ROUTER_SUMMARIZE_API` in `.env` (OpenRouter API, for `rws summarize` and `rws models rank-free`)
 - Runtime: Node 22, managed via `mise`
 - ESM project (`"type": "module"`); imports within `src/` use `.js` extensions
 - Config: `config.toml` at repo root, loaded once at startup via `src/lib/config.ts`

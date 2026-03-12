@@ -13,7 +13,7 @@ CLI tools for fetching content from Readwise Reader and generating AI-powered ar
 - [Node.js](https://nodejs.org/) 22+
 - [pnpm](https://pnpm.io/)
 - A [Readwise Reader](https://readwise.io/read) account and API token
-- An [OpenRouter](https://openrouter.ai/) API key (required for `summarize` and `openrouter-rank-free`)
+- An [OpenRouter](https://openrouter.ai/) API key (required for `rws summarize` and `rws models rank-free`)
 
 ## ⚙️ Setup
 
@@ -29,11 +29,9 @@ Install the published CLI globally from npm:
 npm install -g readwise-summarize
 ```
 
-This installs these commands on your machine:
+This installs one command on your machine:
 
-- `reader-fetch`
-- `summarize`
-- `openrouter-rank-free`
+- `rws`
 
 ## 🔑 Configuration
 
@@ -59,17 +57,15 @@ pnpm build
 pnpm link --global
 ```
 
-This installs these commands on your machine:
+This installs one command on your machine:
 
-- `reader-fetch`
-- `summarize`
-- `openrouter-rank-free`
+- `rws`
 
-If installed globally, you can run them directly without the `pnpm` prefix. For example:
+If installed globally, you can run it directly without the `pnpm` prefix. For example:
 
 ```bash
-reader-fetch --limit 5
-reader-fetch --category rss --limit 5 --with-content | summarize --verbose
+rws fetch --limit 5
+rws fetch --category rss --limit 5 --with-content | rws summarize --verbose
 ```
 
 To create a distributable tarball (still local):
@@ -87,7 +83,7 @@ This repo currently supports two release paths.
 Use the repo-local release command when publishing from your machine:
 
 ```bash
-pnpm release
+pnpm rws -- release
 ```
 
 Typical flow:
@@ -99,25 +95,25 @@ Typical flow:
 # - commit changes
 
 # 2. Preview the release plan
-pnpm release --dry-run
+pnpm rws -- release --dry-run
 
 # Optional: preview the generated release notes
-pnpm release-notes
+pnpm rws -- release-notes
 
 # 3. Run the release
-pnpm release --otp 123456
+pnpm rws -- release --otp 123456
 ```
 
-`pnpm release` uses the generated `pnpm release-notes` output for the GitHub release body automatically.
+`pnpm rws -- release` uses the generated `pnpm rws -- release-notes` output for the GitHub release body automatically.
 
 Useful flags:
 
-- `pnpm release --dry-run`
-- `pnpm release --otp 123456`
-- `pnpm release --skip-publish`
-- `pnpm release --skip-github-release`
-- `pnpm release --skip-push`
-- `pnpm release-notes`
+- `pnpm rws -- release --dry-run`
+- `pnpm rws -- release --otp 123456`
+- `pnpm rws -- release --skip-publish`
+- `pnpm rws -- release --skip-github-release`
+- `pnpm rws -- release --skip-push`
+- `pnpm rws -- release-notes`
 
 ### ☁️ Option 2: GitHub release publish
 
@@ -136,7 +132,7 @@ git push origin main
 git push origin vX.Y.Z
 
 # 3. Publish the GitHub release for that tag
-pnpm release-notes X.Y.Z > /tmp/readwise-summarize-vX.Y.Z-notes.md
+pnpm rws -- release-notes X.Y.Z > /tmp/readwise-summarize-vX.Y.Z-notes.md
 gh release create vX.Y.Z --verify-tag --title "vX.Y.Z" --notes-file /tmp/readwise-summarize-vX.Y.Z-notes.md
 ```
 
@@ -147,7 +143,7 @@ The GitHub publish workflow upgrades npm before publishing because npm trusted p
 To configure the required GitHub Actions secrets from your machine:
 
 ```bash
-pnpm set-github-secrets
+pnpm rws -- github-secrets set
 ```
 
 The helper uses `gh secret set` to upload:
@@ -160,7 +156,7 @@ You can also pass the values non-interactively:
 ```bash
 READWISE_TOKEN=your_token_here \
 OPEN_ROUTER_SUMMARIZE_API=your_key_here \
-pnpm set-github-secrets
+pnpm rws -- github-secrets set
 ```
 
 The helper now prefers exported environment variables first and falls back to `.env` automatically.
@@ -171,28 +167,28 @@ The tools are designed for a two-step daily workflow: fetch first, summarize sec
 
 ```bash
 # Step 1: fetch and write to a dated file
-reader-fetch --category rss --with-content --all --output-dir /data/articles
+rws fetch --category rss --with-content --all --output-dir /data/articles
 
 # Step 2: summarize from that file, write summaries to a dated file
-summarize /data/articles/articles-2026-03-05.json --output-dir /data/summaries
+rws summarize /data/articles/articles-2026-03-05.json --output-dir /data/summaries
 ```
 
-`reader-fetch` writes `articles-YYYY-MM-DD.json` using the machine's local timezone. The file is written atomically (`.tmp` + rename), so `summarize` will never read a partially-written file. The JSON envelope includes a `complete: true` field as a secondary integrity check.
+`rws fetch` writes `articles-YYYY-MM-DD.json` using the machine's local timezone. The file is written atomically (`.tmp` + rename), so `rws summarize` will never read a partially-written file. The JSON envelope includes a `complete: true` field as a secondary integrity check.
 
 Stdin piping is still supported for ad-hoc use:
 
 ```bash
-pnpm --silent reader-fetch --category rss --limit 5 --with-content | pnpm summarize --verbose
+pnpm --silent rws -- fetch --category rss --limit 5 --with-content | pnpm rws -- summarize --verbose
 ```
 
 ---
 
-## 📥 `reader-fetch`
+## 📥 `rws fetch`
 
 Fetches articles from Readwise Reader and writes a dated JSON file to disk.
 
 ```bash
-pnpm reader-fetch [options]
+pnpm rws -- fetch [options]
 ```
 
 ### ⚙️ Options
@@ -226,19 +222,19 @@ pnpm reader-fetch [options]
 
 ```bash
 # First 5 articles from your feed
-pnpm reader-fetch --limit 5
+pnpm rws -- fetch --limit 5
 
 # All email newsletters updated in the last week
-pnpm reader-fetch --category email --updated-after "1 week ago" --all
+pnpm rws -- fetch --category email --updated-after "1 week ago" --all
 
 # RSS articles with full HTML content (for summarization), saved to /data/articles
-pnpm reader-fetch --category rss --limit 10 --with-content --output-dir /data/articles
+pnpm rws -- fetch --category rss --limit 10 --with-content --output-dir /data/articles
 
 # Articles by a specific author updated yesterday
-pnpm reader-fetch --author "Lenny" --category email --updated-after yesterday
+pnpm rws -- fetch --author "Lenny" --category email --updated-after yesterday
 
 # All RSS articles published since Feb 1
-pnpm reader-fetch --category rss --published-since 2026-02-01 --all
+pnpm rws -- fetch --category rss --published-since 2026-02-01 --all
 ```
 
 ### Output Format
@@ -277,12 +273,12 @@ Writes `<prefix>-YYYY-MM-DD.json` to the output directory (date from machine loc
 
 ---
 
-## `summarize`
+## `rws summarize`
 
-Reads a `reader-fetch` output file and writes AI-generated summaries to stdout.
+Reads an `rws fetch` output file and writes AI-generated summaries to stdout.
 
 ```bash
-pnpm summarize [options] <file>
+pnpm rws -- summarize [options] <file>
 ```
 
 Falls back to reading a JSON array from stdin if no file argument is given (legacy pipe usage).
@@ -329,16 +325,16 @@ User overrides are loaded from a writable per-user config file instead of modify
 
 ```bash
 # Summarize today's fetch using the configured model
-pnpm summarize articles-2026-03-05.json --verbose
+pnpm rws -- summarize articles-2026-03-05.json --verbose
 
 # Write summaries to a dated file instead of stdout
-pnpm summarize articles-2026-03-05.json --output-dir /data/summaries
+pnpm rws -- summarize articles-2026-03-05.json --output-dir /data/summaries
 
 # Auto-select the best free model, then summarize
-pnpm summarize articles-2026-03-05.json --scan-free --verbose
+pnpm rws -- summarize articles-2026-03-05.json --scan-free --verbose
 
 # Include the original Readwise summary alongside the AI summary
-pnpm summarize articles-2026-03-05.json --with-original
+pnpm rws -- summarize articles-2026-03-05.json --with-original
 ```
 
 ### Output Format
@@ -360,12 +356,12 @@ pnpm summarize articles-2026-03-05.json --with-original
 
 ---
 
-## `openrouter-rank-free`
+## `rws models rank-free`
 
 Scans OpenRouter for free models, probes each one, and ranks them by quality and speed. Useful for finding the best available free model for summarization.
 
 ```bash
-pnpm openrouter-rank-free [options]
+pnpm rws -- models rank-free [options]
 ```
 
 ### Options
@@ -384,7 +380,7 @@ pnpm openrouter-rank-free [options]
 ### Example
 
 ```bash
-pnpm openrouter-rank-free --verbose
+pnpm rws -- models rank-free --verbose
 ```
 
 ---
@@ -426,11 +422,15 @@ src/
 │   ├── release.test.ts
 │   ├── summarize.ts              # LLM summarization logic
 │   └── summarize.test.ts
-├── reader-fetch.ts               # CLI: fetch articles from Readwise Reader
-├── release.ts                    # CLI: prepared npm release workflow
+├── github-secrets-set.ts         # CLI subcommand: upload GitHub Actions secrets
+├── openrouter-rank-free.ts       # CLI subcommand: scan and rank free OpenRouter models
+├── reader-fetch.ts               # CLI subcommand: fetch articles from Readwise Reader
+├── release-notes.ts              # CLI subcommand: changelog-driven release notes
+├── release.ts                    # CLI subcommand: prepared npm release workflow
 ├── release.test.ts
-├── summarize.ts                  # CLI: generate AI summaries via OpenRouter
-├── openrouter-rank-free.ts       # CLI: scan and rank free OpenRouter models
+├── rws.test.ts
+├── rws.ts                        # Root CLI: unified command entrypoint
+├── summarize.ts                  # CLI subcommand: generate AI summaries via OpenRouter
 └── integration.test.ts           # Integration tests (live API credentials required)
 .github/workflows/publish-npm.yml # GitHub release -> npm publish workflow
 config.toml                       # All runtime configuration

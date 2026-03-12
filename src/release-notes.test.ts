@@ -8,12 +8,12 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const tsx = join(root, "node_modules/.bin/tsx");
-const cli = join(__dirname, "release-notes.ts");
+const cli = join(__dirname, "rws.ts");
 
 let tmpRepo = "";
 
 function run(args: string[]) {
-  return spawnSync(tsx, [cli, ...args], {
+  return spawnSync(tsx, [cli, "release-notes", ...args], {
     cwd: tmpRepo,
     encoding: "utf-8",
   });

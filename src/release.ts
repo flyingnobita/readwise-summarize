@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 import { readFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 import { tmpdir } from "os";
 import { spawnSync } from "child_process";
 import { Command } from "commander";
+import { fileURLToPath } from "url";
 import {
   assertReleaseVersion,
   buildReleasePlan,
@@ -84,10 +85,12 @@ function writeGithubReleaseNotesFile(
 }
 
 async function main(): Promise<void> {
-  const program = new Command();
+  const program = createReleaseCommand();
+  await program.parseAsync();
+}
 
-  program
-    .name("release")
+export function createReleaseCommand(): Command {
+  return new Command("release")
     .description("Run the verified npm release workflow for the current package version")
     .argument("[version]", "Release version. Must match package.json if provided.")
     .option("--remote <name>", "Git remote to push to", "origin")
@@ -99,98 +102,100 @@ async function main(): Promise<void> {
     .option("--skip-publish", "Skip npm publish")
     .option("--skip-github-release", "Skip GitHub release creation")
     .option("--dry-run", "Print planned commands without executing them")
-    .parse();
+    .action(async function releaseCommandAction(versionArg?: string) {
+      const cwd = process.cwd();
+      const packageJsonPath = join(cwd, "package.json");
+      if (!existsSync(packageJsonPath)) {
+        process.stderr.write("Error: package.json not found in current directory.\n");
+        process.exit(1);
+      }
 
-  const cwd = process.cwd();
-  const packageJsonPath = join(cwd, "package.json");
-  if (!existsSync(packageJsonPath)) {
-    process.stderr.write("Error: package.json not found in current directory.\n");
-    process.exit(1);
-  }
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as {
+        name?: string;
+        version?: string;
+      };
+      if (!packageJson.version) {
+        process.stderr.write("Error: package.json is missing version.\n");
+        process.exit(1);
+      }
+      if (!packageJson.name) {
+        process.stderr.write("Error: package.json is missing name.\n");
+        process.exit(1);
+      }
 
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as {
-    name?: string;
-    version?: string;
-  };
-  if (!packageJson.version) {
-    process.stderr.write("Error: package.json is missing version.\n");
-    process.exit(1);
-  }
-  if (!packageJson.name) {
-    process.stderr.write("Error: package.json is missing name.\n");
-    process.exit(1);
-  }
+      const opts = this.opts<{
+        remote: string;
+        otp?: string;
+        skipTests?: boolean;
+        skipIntegration?: boolean;
+        skipBuild?: boolean;
+        skipPush?: boolean;
+        skipPublish?: boolean;
+        skipGithubRelease?: boolean;
+        dryRun?: boolean;
+      }>();
 
-  const opts = program.opts<{
-    remote: string;
-    otp?: string;
-    skipTests?: boolean;
-    skipIntegration?: boolean;
-    skipBuild?: boolean;
-    skipPush?: boolean;
-    skipPublish?: boolean;
-    skipGithubRelease?: boolean;
-    dryRun?: boolean;
-  }>();
+      const version = assertReleaseVersion(packageJson.version, versionArg);
+      const branch = runCommand("git", ["rev-parse", "--abbrev-ref", "HEAD"], cwd);
+      const tag = releaseTag(version);
 
-  const version = assertReleaseVersion(packageJson.version, program.args[0] as string | undefined);
-  const branch = runCommand("git", ["rev-parse", "--abbrev-ref", "HEAD"], cwd);
-  const tag = releaseTag(version);
+      ensureCleanWorktree(cwd);
+      ensureTagDoesNotExist(cwd, tag);
 
-  ensureCleanWorktree(cwd);
-  ensureTagDoesNotExist(cwd, tag);
+      const githubReleaseNotesFile =
+        opts.skipGithubRelease === true ? undefined : buildReleaseNotesPreviewPath(version);
 
-  const githubReleaseNotesFile =
-    opts.skipGithubRelease === true ? undefined : buildReleaseNotesPreviewPath(version);
+      const plan = buildReleasePlan({
+        version,
+        remote: opts.remote,
+        branch,
+        dryRun: opts.dryRun ?? false,
+        skipTests: opts.skipTests ?? false,
+        skipIntegration: opts.skipIntegration ?? false,
+        skipBuild: opts.skipBuild ?? false,
+        skipPush: opts.skipPush ?? false,
+        skipPublish: opts.skipPublish ?? false,
+        skipGithubRelease: opts.skipGithubRelease ?? false,
+        githubReleaseNotesFile,
+        otp: opts.otp,
+      });
 
-  const plan = buildReleasePlan({
-    version,
-    remote: opts.remote,
-    branch,
-    dryRun: opts.dryRun ?? false,
-    skipTests: opts.skipTests ?? false,
-    skipIntegration: opts.skipIntegration ?? false,
-    skipBuild: opts.skipBuild ?? false,
-    skipPush: opts.skipPush ?? false,
-    skipPublish: opts.skipPublish ?? false,
-    skipGithubRelease: opts.skipGithubRelease ?? false,
-    githubReleaseNotesFile,
-    otp: opts.otp,
-  });
+      if (opts.dryRun) {
+        process.stdout.write(`Release version: ${version}\n`);
+        process.stdout.write(`Branch: ${branch}\n`);
+        process.stdout.write(`Tag: ${tag}\n`);
+        for (const step of plan) {
+          process.stdout.write(`- ${step.description}: ${step.command} ${step.args.join(" ")}\n`);
+        }
+        return;
+      }
 
-  if (opts.dryRun) {
-    process.stdout.write(`Release version: ${version}\n`);
-    process.stdout.write(`Branch: ${branch}\n`);
-    process.stdout.write(`Tag: ${tag}\n`);
-    for (const step of plan) {
-      process.stdout.write(`- ${step.description}: ${step.command} ${step.args.join(" ")}\n`);
-    }
-    return;
-  }
+      const notesArtifact =
+        opts.skipGithubRelease === true
+          ? undefined
+          : writeGithubReleaseNotesFile(cwd, packageJson.name, version);
 
-  const notesArtifact =
-    opts.skipGithubRelease === true
-      ? undefined
-      : writeGithubReleaseNotesFile(cwd, packageJson.name, version);
-
-  try {
-    for (const step of plan) {
-      process.stderr.write(`${step.description}...\n`);
-      const args =
-        step.command === "gh" && notesArtifact
-          ? step.args.map((arg) =>
-              arg === githubReleaseNotesFile ? notesArtifact.file : arg
-            )
-          : step.args;
-      runInteractive(step.command, args, cwd);
-    }
-  } finally {
-    notesArtifact?.cleanup();
-  }
+      try {
+        for (const step of plan) {
+          process.stderr.write(`${step.description}...\n`);
+          const args =
+            step.command === "gh" && notesArtifact
+              ? step.args.map((arg) =>
+                  arg === githubReleaseNotesFile ? notesArtifact.file : arg
+                )
+              : step.args;
+          runInteractive(step.command, args, cwd);
+        }
+      } finally {
+        notesArtifact?.cleanup();
+      }
+    });
 }
 
-main().catch((err: unknown) => {
-  const message = err instanceof Error ? err.message : String(err);
-  process.stderr.write(`Error: ${message}\n`);
-  process.exit(1);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main().catch((err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Error: ${message}\n`);
+    process.exit(1);
+  });
+}

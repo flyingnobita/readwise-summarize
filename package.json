@@ -1,15 +1,14 @@
 {
   "name": "readwise-summarize",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "CLI tools for fetching Readwise Reader content and generating AI summaries",
   "type": "module",
   "bin": {
-    "reader-fetch": "./dist/reader-fetch.js",
-    "summarize": "./dist/summarize.js",
-    "openrouter-rank-free": "./dist/openrouter-rank-free.js"
+    "rws": "./dist/rws.js"
   },
   "files": [
     "dist",
+    "scripts",
     "config.toml",
     "config_prompt.md",
     "README.md",
@@ -19,12 +18,13 @@
     "clean": "rm -rf dist",
     "build": "pnpm clean && tsc -p tsconfig.build.json",
     "prepack": "pnpm build",
-    "release": "tsx src/release.ts",
-    "release-notes": "tsx src/release-notes.ts",
-    "set-github-secrets": "bash scripts/set-github-secrets.sh",
-    "reader-fetch": "tsx src/reader-fetch.ts",
-    "openrouter-rank-free": "tsx src/openrouter-rank-free.ts",
-    "summarize": "tsx src/summarize.ts",
+    "rws": "tsx src/rws.ts",
+    "rws:fetch": "tsx src/rws.ts fetch",
+    "rws:summarize": "tsx src/rws.ts summarize",
+    "rws:models:rank-free": "tsx src/rws.ts models rank-free",
+    "rws:release": "tsx src/rws.ts release",
+    "rws:release-notes": "tsx src/rws.ts release-notes",
+    "rws:github-secrets:set": "tsx src/rws.ts github-secrets set",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --reporter=verbose --config vitest.integration.config.ts"

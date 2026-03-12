@@ -1,12 +1,13 @@
 # Changelog
 
+- Mar-12, 2026 - 03:45 PM SGT - Release 1.1.0: unify the CLI surface under a single `rws` command with subcommands for fetch, summarize, model ranking, release automation, and GitHub secret setup
+- Mar-10, 2026 - 05:10 PM SGT - Release 1.0.3: retry GitHub-trusted npm publishing from the corrected 1.0.2 code state after the mis-tagged 1.0.2 release
 - Mar-10, 2026 - 09:15 PM SGT - Rename the default Git branch from `master` to `main` and update README branch references
 - Mar-10, 2026 - 07:05 PM SGT - Prefix `README.md` section headings with emojis for a more expressive top-level presentation
 - Mar-10, 2026 - 06:48 PM SGT - Add npm version, MIT license, and publish-workflow badges to `README.md`
 - Mar-10, 2026 - 05:29 PM SGT - Wire `pnpm release` to publish GitHub releases with generated `pnpm release-notes` output instead of GitHub auto-generated notes
 - Mar-10, 2026 - 05:20 PM SGT - Document the required `CHANGELOG.md` release-entry format in `AGENTS.md` so `pnpm release-notes` can group release summaries and detail bullets correctly
 - Mar-10, 2026 - 05:14 PM SGT - Add changelog-driven `pnpm release-notes` generator with tests and docs for user-facing GitHub release notes
-- Mar-10, 2026 - 05:10 PM SGT - Release 1.0.3: retry GitHub-trusted npm publishing from the corrected 1.0.2 code state after the mis-tagged 1.0.2 release
 - Mar-10, 2026 - 05:03 PM SGT - Release 1.0.2: upgrade npm in GitHub trusted-publishing workflow to satisfy npm trusted-publishing requirements and unblock CI-based npm publish
 - Mar-10, 2026 - 05:00 PM SGT - Fix GitHub trusted-publishing workflow to upgrade npm before publish because npm trusted publishing requires npm CLI 11.5.1 or later
 - Mar-10, 2026 - 04:50 PM SGT - Release 1.0.1: add `pnpm set-github-secrets`, streamline README release/setup flow, and finalize GitHub trusted-publishing automation docs

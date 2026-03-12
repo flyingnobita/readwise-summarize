@@ -5,9 +5,9 @@
  * API call budget per run: ~11 calls
  *   1 × Readwise (basic fetch)
  *   1 × Readwise (category=rss + withHtmlContent)
- *   1 × Readwise (reader-fetch CLI file output test)
- *   1 × Readwise (summarize CLI pipeline: reader-fetch with --with-content)
- *   1 × OpenRouter (summarize CLI pipeline: summarize --output-dir call)
+ *   1 × Readwise (rws fetch CLI file output test)
+ *   1 × Readwise (rws summarize CLI pipeline: rws fetch with --with-content)
+ *   1 × OpenRouter (rws summarize CLI pipeline: rws summarize --output-dir call)
  *   1 × OpenRouter (fetchFreeModels)
  *   1 × OpenRouter (testModel)
  *   1 × Readwise (fetch doc for verified-model summarize)
@@ -91,16 +91,16 @@ describe("Readwise API", () => {
 });
 
 // ---------------------------------------------------------------------------
-// reader-fetch CLI — file output
+// rws fetch CLI — file output
 // ---------------------------------------------------------------------------
 
-describe("reader-fetch CLI file output", () => {
+describe("rws fetch CLI file output", () => {
   it("writes a valid dated envelope file to --output-dir", () => {
     const before = new Date();
 
     const result = spawnSync(
       tsx,
-      ["src/reader-fetch.ts", "--limit", "1", "--output-dir", readerFetchTmpDir, "--prefix", "test-articles"],
+      ["src/rws.ts", "fetch", "--limit", "1", "--output-dir", readerFetchTmpDir, "--prefix", "test-articles"],
       {
         cwd: root,
         encoding: "utf-8",
@@ -108,7 +108,7 @@ describe("reader-fetch CLI file output", () => {
       }
     );
 
-    expect(result.status, `reader-fetch exited with stderr: ${result.stderr}`).toBe(0);
+    expect(result.status, `rws fetch exited with stderr: ${result.stderr}`).toBe(0);
 
     // Filename uses custom prefix and YYYY-MM-DD in local timezone
     const now = new Date();
@@ -141,10 +141,10 @@ describe("reader-fetch CLI file output", () => {
 });
 
 // ---------------------------------------------------------------------------
-// summarize CLI — end-to-end pipeline: reader-fetch file → summarize CLI
+// rws summarize CLI — end-to-end pipeline: rws fetch file → rws summarize CLI
 // ---------------------------------------------------------------------------
 
-describe("summarize CLI end-to-end pipeline", () => {
+describe("rws summarize CLI end-to-end pipeline", () => {
   let articlesFile = "";
 
   beforeAll(() => {
@@ -155,7 +155,7 @@ describe("summarize CLI end-to-end pipeline", () => {
 
     spawnSync(
       tsx,
-      ["src/reader-fetch.ts", "--limit", "1", "--category", "rss", "--with-content", "--output-dir", pipelineTmpDir, "--prefix", "pipeline"],
+      ["src/rws.ts", "fetch", "--limit", "1", "--category", "rss", "--with-content", "--output-dir", pipelineTmpDir, "--prefix", "pipeline"],
       {
         cwd: root,
         encoding: "utf-8",
@@ -165,15 +165,15 @@ describe("summarize CLI end-to-end pipeline", () => {
     );
   }, 25_000);
 
-  it("reads a reader-fetch envelope file and writes summaries-YYYY-MM-DD.json via --output-dir", () => {
+  it("reads an rws fetch envelope file and writes summaries-YYYY-MM-DD.json via --output-dir", () => {
     if (!existsSync(articlesFile)) {
-      process.stderr.write("⚠  reader-fetch file not created; pipeline test skipped\n");
+      process.stderr.write("⚠  rws fetch file not created; pipeline test skipped\n");
       return;
     }
 
     const result = spawnSync(
       tsx,
-      ["src/summarize.ts", articlesFile, "--output-dir", pipelineTmpDir, "--prefix", "pipeline-summaries"],
+      ["src/rws.ts", "summarize", articlesFile, "--output-dir", pipelineTmpDir, "--prefix", "pipeline-summaries"],
       {
         cwd: root,
         encoding: "utf-8",
@@ -182,7 +182,7 @@ describe("summarize CLI end-to-end pipeline", () => {
       }
     );
 
-    expect(result.status, `summarize exited with stderr: ${result.stderr}`).toBe(0);
+    expect(result.status, `rws summarize exited with stderr: ${result.stderr}`).toBe(0);
     expect(result.stdout.trim()).toBe(""); // nothing written to stdout
 
     const now = new Date();

@@ -1,5 +1,5 @@
 /**
- * CLI tests for src/summarize.ts.
+ * CLI tests for rws summarize.
  *
  * Runs the CLI as a subprocess via tsx. All success-path tests use documents
  * with no html_content so summarizeDocument returns "[no content available]"
@@ -17,7 +17,7 @@ import { dirname } from "path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const tsx = join(root, "node_modules/.bin/tsx");
-const cli = join(__dirname, "summarize.ts");
+const cli = join(__dirname, "rws.ts");
 
 const tmpDir = join(tmpdir(), `summarize-test-${process.pid}`);
 
@@ -37,7 +37,7 @@ function writeTemp(name: string, content: unknown): string {
 }
 
 function run(args: string[], stdinInput?: string) {
-  return spawnSync(tsx, [cli, ...args], {
+  return spawnSync(tsx, [cli, "summarize", ...args], {
     cwd: root,
     input: stdinInput,
     encoding: "utf-8",
