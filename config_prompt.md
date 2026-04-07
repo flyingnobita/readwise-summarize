@@ -6,6 +6,7 @@ Produce a concise, Markdown-native summary that is easy to scan.
 2. Convert full-sentence prose into short point-form bullets.
 3. Start every sub-point with 2-3 bold action words that capture the advice or insight.
 4. Do not start with a title or heading. Go straight to the bullet points.
+5. Ignore sponsored content, advertisements, and similar promotional material; do not summarize, quote, or reference them.
 
 ## Formatting Standard
 
@@ -27,7 +28,8 @@ Examples:
 
 ## Summarization Workflow
 
-1. Identify the source's primary objective and major themes.
-2. Extract key facts and decisions that must be preserved.
-3. Prefix each sub-point with bold 2-3 word actions.
-4. Perform a final pass to remove fluff and tighten phrasing.
+1. Discard sponsored segments, ads, and similar promotional material
+2. Identify the source's primary objective and major themes.
+3. Extract key facts and decisions that must be preserved.
+4. Prefix each sub-point with bold 2-3 word actions.
+5. Perform a final pass to remove fluff and tighten phrasing.
