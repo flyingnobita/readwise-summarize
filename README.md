@@ -29,6 +29,12 @@ Install the published CLI globally from npm:
 npm install -g readwise-summarize
 ```
 
+Or with `pnpm`:
+
+```bash
+pnpm add -g readwise-summarize
+```
+
 This installs one command on your machine:
 
 - `rws`
