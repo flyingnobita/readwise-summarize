@@ -1,6 +1,6 @@
 [tools]
-node = "22"
-pnpm = "latest"
+node = "25"
+"npm:pnpm" = "11"
 
 [tasks.release]
 run = "pnpm release"
